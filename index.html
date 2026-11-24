@@ -1,0 +1,2634 @@
+<!DOCTYPE html>
+<html lang="es-CL" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>RiderTrack Chile — Control de Repartos y Comparador</title>
+
+  <!-- Etiquetas Meta PWA completas para instalación nativa en Android e iOS -->
+  <meta name="theme-color" content="#090d16" />
+  <meta name="background-color" content="#090d16" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="RiderTrack CL" />
+  <meta name="application-name" content="RiderTrack Chile" />
+  <meta name="description" content="Control financiero, comparador de ofertas en vivo, kilómetros, gastos y mapa de zonas rentables para repartidores en Chile." />
+
+  <!-- Ícono SVG embebido en alta resolución -->
+  <link id="app-favicon" rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0%25' y1='0%25' x2='100%25' y2='100%25'%3E%3Cstop offset='0%25' stop-color='%2310b981'/%3E%3Cstop offset='100%25' stop-color='%2306b6d4'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='512' height='512' rx='112' fill='%23090d16'/%3E%3Crect x='24' y='24' width='464' height='464' rx='92' fill='none' stroke='url(%23g)' stroke-width='18' opacity='0.35'/%3E%3Ccircle cx='256' cy='256' r='168' fill='none' stroke='url(%23g)' stroke-width='30'/%3E%3Cpath d='M166 294 L236 218 L284 260 L352 184' fill='none' stroke='%2310b981' stroke-width='32' stroke-linecap='round' stroke-linejoin='round'/%3E%3Ccircle cx='352' cy='184' r='22' fill='%2306b6d4'/%3E%3C/svg%3E" />
+  <link id="apple-touch-icon" rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23090d16'/%3E%3Ccircle cx='256' cy='256' r='168' fill='none' stroke='%2310b981' stroke-width='30'/%3E%3Cpath d='M166 294 L236 218 L284 260 L352 184' fill='none' stroke='%2306b6d4' stroke-width='32' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+
+  <!-- Web App Manifest inicial (se enriquece dinámicamente con íconos PNG 192/512 al iniciar) -->
+  <link rel="manifest" id="pwa-manifest-link" href='data:application/manifest+json,{"name":"RiderTrack%20Chile","short_name":"RiderTrack","start_url":".","display":"standalone","orientation":"portrait","background_color":"%23090d16","theme_color":"%23090d16"}' />
+
+  <!-- Tipografía Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+  <!-- Leaflet.js CSS & JS CDN -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+
+  <style>
+    html, body {
+      background-color: #05070c;
+      color: #f8fafc;
+      font-family: 'Inter', system-ui, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: none;
+    }
+
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090d16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 9999px;
+    }
+
+    /* Estilos oscuros para Leaflet */
+    .leaflet-container {
+      background-color: #090d16 !important;
+      font-family: 'Inter', sans-serif !important;
+    }
+    .leaflet-popup-content-wrapper,
+    .leaflet-popup-tip {
+      background-color: #131c2e !important;
+      color: #f8fafc !important;
+      border: 1px solid #334155 !important;
+      border-radius: 14px !important;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.75) !important;
+    }
+    .leaflet-popup-close-button {
+      color: #94a3b8 !important;
+      padding: 6px 8px 0 0 !important;
+    }
+    .leaflet-control-attribution {
+      background: rgba(9, 13, 22, 0.8) !important;
+      color: #64748b !important;
+      font-size: 9px !important;
+    }
+    .leaflet-control-attribution a {
+      color: #94a3b8 !important;
+    }
+
+    /* Inputs de fecha y hora en modo oscuro */
+    input[type="date"]::-webkit-calendar-picker-indicator,
+    input[type="time"]::-webkit-calendar-picker-indicator {
+      filter: invert(1) opacity(0.75);
+      cursor: pointer;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.35); }
+      50% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
+    }
+    .winner-glow {
+      animation: pulseGlow 2.4s infinite;
+    }
+  </style>
+</head>
+<body class="min-h-[100dvh] flex justify-center selection:bg-emerald-500/30 selection:text-emerald-200">
+
+  <!-- Contenedor Mobile-First -->
+  <div id="app-shell" class="w-full max-w-[480px] min-h-[100dvh] bg-[#090d16] relative flex flex-col border-x border-[#1e293b]/80 shadow-2xl">
+
+    <!-- ========================================================= -->
+    <!-- HEADER SUPERIOR FIJO                                      -->
+    <!-- ========================================================= -->
+    <header class="sticky top-0 z-30 bg-[#090d16]/95 backdrop-blur-md border-b border-[#1e293b] px-3.5 py-2.5 flex items-center justify-between gap-2">
+      <!-- Marca -->
+      <button onclick="switchTab('resumen')" class="flex items-center gap-2 text-left min-w-0">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/40 flex items-center justify-center shrink-0">
+          <svg class="w-5 h-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="5.5" cy="17.5" r="3.5" />
+            <circle cx="18.5" cy="17.5" r="3.5" />
+            <path d="M15 6a1 1 0 1 0 0-2 1 1 0 0 0 0 2zm-3 11.5V14l-3-3 4-3 2 3h2" />
+          </svg>
+        </div>
+        <div class="min-w-0">
+          <div class="flex items-center gap-1.5">
+            <span class="font-extrabold text-sm sm:text-base tracking-tight text-white leading-none truncate">RiderTrack</span>
+            <span class="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 tracking-wider">CL</span>
+          </div>
+          <span id="header-today-pill" class="block text-[11px] font-semibold text-emerald-400 tabular-nums mt-0.5 truncate">Hoy: $0</span>
+        </div>
+      </button>
+
+      <!-- Acciones Rápidas Header: Instalar en Celular + Ajustes -->
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button id="header-install-btn" onclick="triggerPWAInstall()" class="flex items-center gap-1.5 px-2.5 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 text-[11px] font-bold transition active:scale-95">
+          <svg class="w-3.5 h-3.5 text-emerald-400 shrink-0" fill="none" stroke="currentColor" stroke-width="2.3" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"/></svg>
+          <span>Instalar</span>
+        </button>
+
+        <button data-tab="ajustes" onclick="switchTab('ajustes')" aria-label="Ajustes y Respaldo" class="nav-header-btn p-2 rounded-xl bg-[#131c2e] hover:bg-slate-800 text-slate-300 border border-[#1e293b] transition active:scale-95">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- ========================================================= -->
+    <!-- CONTENIDO PRINCIPAL                                       -->
+    <!-- ========================================================= -->
+    <main class="flex-1 overflow-y-auto px-3.5 pt-3.5 pb-28 space-y-4">
+
+      <!-- ======================================================= -->
+      <!-- VISTA 1: RESUMEN (KPIs + Historial con Editar/Eliminar) -->
+      <!-- ======================================================= -->
+      <section id="view-resumen" class="space-y-4">
+
+        <!-- Aviso de Datos Demo con botón "Limpiar datos de ejemplo (Empezar en 0)" -->
+        <div id="demo-data-banner" class="hidden bg-amber-500/10 border border-amber-500/35 rounded-2xl p-3 flex items-center justify-between gap-2.5">
+          <div class="min-w-0">
+            <span class="block text-xs font-bold text-amber-300">Modo Demostración Activo</span>
+            <span class="block text-[11px] text-slate-300 leading-snug">Estás viendo registros de ejemplo en Santiago.</span>
+          </div>
+          <button onclick="confirmClearAllData()" class="shrink-0 px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold text-[11px] transition active:scale-95">
+            Empezar en 0
+          </button>
+        </div>
+
+        <!-- Filtro de Período -->
+        <div class="grid grid-cols-4 gap-1 bg-[#131c2e] p-1 rounded-2xl border border-[#1e293b]">
+          <button data-period="hoy" onclick="setPeriod('hoy')" class="period-btn py-2 text-xs font-semibold rounded-xl transition">Hoy</button>
+          <button data-period="semana" onclick="setPeriod('semana')" class="period-btn py-2 text-xs font-semibold rounded-xl transition">Semana</button>
+          <button data-period="mes" onclick="setPeriod('mes')" class="period-btn py-2 text-xs font-semibold rounded-xl transition">Este Mes</button>
+          <button data-period="todo" onclick="setPeriod('todo')" class="period-btn py-2 text-xs font-semibold rounded-xl transition">Todo</button>
+        </div>
+
+        <!-- Tarjeta Principal: Ganancia Neta -->
+        <div class="rounded-2xl bg-gradient-to-br from-[#131c2e] via-[#131c2e] to-[#0d2821] border border-[#1e293b] p-4 shadow-lg">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <p class="text-xs font-medium text-slate-400 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                Ganancia Neta (<span id="period-label-text">Esta Semana</span>)
+              </p>
+              <h1 id="kpi-net-profit" class="text-3xl sm:text-4xl font-black tracking-tight tabular-nums text-emerald-400 mt-1">$0</h1>
+            </div>
+            <span id="kpi-margin-badge" class="px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 tabular-nums">
+              0% margen
+            </span>
+          </div>
+
+          <div class="mt-3.5">
+            <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden flex">
+              <div id="bar-income-share" class="bg-emerald-500 h-full transition-all duration-500" style="width: 100%"></div>
+              <div id="bar-expense-share" class="bg-rose-500 h-full transition-all duration-500" style="width: 0%"></div>
+            </div>
+            <div class="flex justify-between text-[11px] text-slate-400 mt-1.5">
+              <span>Ingresos: <strong id="bar-income-text" class="text-slate-200 tabular-nums">$0</strong></span>
+              <span>Gastos: <strong id="bar-expense-text" class="text-rose-400 tabular-nums">$0</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Grid de 6 Tarjetas KPI (2 columnas x 3 filas) -->
+        <div class="grid grid-cols-2 gap-2.5">
+          <!-- 1. Ingresos Brutos -->
+          <div class="bg-[#131c2e] border border-[#1e293b] rounded-2xl p-3">
+            <span class="text-[11px] font-medium text-slate-400 block">Ingresos Brutos</span>
+            <p id="kpi-gross-income" class="text-base sm:text-lg font-extrabold text-white tabular-nums mt-0.5">$0</p>
+            <span id="kpi-order-count" class="text-[11px] text-emerald-400 font-semibold">0 pedidos</span>
+          </div>
+
+          <!-- 2. Gastos Totales -->
+          <div class="bg-[#131c2e] border border-[#1e293b] rounded-2xl p-3">
+            <span class="text-[11px] font-medium text-slate-400 block">Gastos Totales</span>
+            <p id="kpi-total-expenses" class="text-base sm:text-lg font-extrabold text-rose-400 tabular-nums mt-0.5">$0</p>
+            <span id="kpi-expense-count" class="text-[11px] text-slate-400">0 registros</span>
+          </div>
+
+          <!-- 3. Kilómetros Totales -->
+          <div class="bg-[#131c2e] border border-[#1e293b] rounded-2xl p-3">
+            <span class="text-[11px] font-medium text-slate-400 block">Km Recorridos</span>
+            <p id="kpi-total-km" class="text-base sm:text-lg font-extrabold text-cyan-400 tabular-nums mt-0.5">0,0 km</p>
+            <span id="kpi-avg-km" class="text-[11px] text-slate-400">Prom: 0,0 km/ped</span>
+          </div>
+
+          <!-- 4. Rentabilidad $/km -->
+          <div class="bg-[#131c2e] border border-[#1e293b] rounded-2xl p-3">
+            <span class="text-[11px] font-medium text-slate-400 block">Promedio $/km</span>
+            <p id="kpi-gross-per-km" class="text-base sm:text-lg font-extrabold text-white tabular-nums mt-0.5">$0/km</p>
+            <span id="kpi-net-per-km" class="text-[11px] text-cyan-400 font-semibold">Neto: $0/km</span>
+          </div>
+
+          <!-- 5. Ganancia por Hora ($/hora) -->
+          <div class="bg-[#131c2e] border border-[#1e293b] rounded-2xl p-3">
+            <span class="text-[11px] font-medium text-slate-400 block">Promedio $/hora</span>
+            <p id="kpi-hourly-rate" class="text-base sm:text-lg font-extrabold text-amber-400 tabular-nums mt-0.5">$0/hr</p>
+            <span id="kpi-total-hours" class="text-[11px] text-slate-400">0h 0m en ruta</span>
+          </div>
+
+          <!-- 6. Ticket Promedio por Pedido -->
+          <div class="bg-[#131c2e] border border-[#1e293b] rounded-2xl p-3">
+            <span class="text-[11px] font-medium text-slate-400 block">Promedio / Pedido</span>
+            <p id="kpi-avg-order" class="text-base sm:text-lg font-extrabold text-emerald-400 tabular-nums mt-0.5">$0</p>
+            <span id="kpi-tips-total" class="text-[11px] text-slate-400">Propinas: $0</span>
+          </div>
+        </div>
+
+        <!-- Historial Detallado con Búsqueda, Filtro y Limpieza -->
+        <div class="space-y-2.5 pt-1">
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <h2 class="text-sm font-extrabold text-white">Historial de Movimientos</h2>
+              <span id="history-count-badge" class="text-[11px] text-slate-400">0 registros mostrados</span>
+            </div>
+            <button onclick="confirmClearAllData()" class="px-2.5 py-1.5 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 text-[11px] font-bold transition active:scale-95">
+              Limpiar datos (Empezar en 0)
+            </button>
+          </div>
+
+          <!-- Buscador y Filtro por App/Tipo -->
+          <div class="grid grid-cols-5 gap-2">
+            <div class="col-span-3 relative">
+              <input type="text" id="history-search" oninput="renderResumenView()" placeholder="Buscar comuna, nota..." class="w-full bg-[#131c2e] border border-[#1e293b] focus:border-emerald-500 rounded-xl pl-8 pr-2.5 py-2 text-xs text-white placeholder-slate-500 outline-none" />
+              <svg class="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/></svg>
+            </div>
+            <select id="history-filter-type" onchange="renderResumenView()" class="col-span-2 bg-[#131c2e] border border-[#1e293b] focus:border-emerald-500 rounded-xl px-2 py-2 text-xs font-semibold text-slate-200 outline-none">
+              <option value="TODOS">Todos</option>
+              <option value="PedidosYa">PedidosYa</option>
+              <option value="Uber Eats">Uber Eats</option>
+              <option value="Rappi">Rappi</option>
+              <option value="DiDi Food">DiDi Food</option>
+              <option value="Otra">Otra App</option>
+              <option value="GASTOS">Solo Gastos</option>
+            </select>
+          </div>
+
+          <!-- Lista de Movimientos -->
+          <div id="activity-list" class="space-y-2.5">
+            <!-- Renderizado dinámico -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================= -->
+      <!-- VISTA 2: COMPARADOR DE OFERTAS EN VIVO                  -->
+      <!-- ======================================================= -->
+      <section id="view-comparar" class="hidden space-y-4">
+        <!-- Encabezado Explicativo -->
+        <div class="bg-gradient-to-br from-[#131c2e] to-[#0f2436] border border-cyan-500/30 rounded-2xl p-4">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <span class="inline-block text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 mb-1">Decisión Rápida en Ruta</span>
+              <h2 class="text-base font-extrabold text-white">¿Cuál Pedido Tomar Primero?</h2>
+              <p class="text-xs text-slate-300 mt-0.5 leading-relaxed">Ingresa los datos de las ofertas que te están sonando y compáralas al instante.</p>
+            </div>
+          </div>
+
+          <!-- Meta Activa + Botones Rápidos -->
+          <div class="flex items-center justify-between gap-2 mt-3 pt-3 border-t border-[#1e293b] text-[11px]">
+            <div class="text-slate-300">
+              Meta: <strong id="comp-meta-display" class="text-emerald-400 tabular-nums">$750/km</strong> • Costo: <strong id="comp-cost-display" class="text-rose-400 tabular-nums">$95/km</strong>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button onclick="loadSampleOffersToCompare()" class="px-2.5 py-1 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 font-semibold transition">
+                Ejemplo
+              </button>
+              <button onclick="resetComparatorOffers()" class="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition">
+                Limpiar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel de Veredicto / Ranking Instantáneo -->
+        <div id="comparator-ranking-box" class="bg-[#131c2e] border border-[#1e293b] rounded-2xl p-3.5 space-y-2">
+          <div class="flex items-center justify-between">
+            <h3 class="text-xs font-extrabold uppercase tracking-wider text-slate-300">Ranking en Vivo (Mejor a Peor)</h3>
+            <span class="text-[11px] text-slate-400">Se ordena solo</span>
+          </div>
+          <div id="comparator-ranking-summary" class="space-y-2">
+            <!-- Resumen dinámico de ranking -->
+          </div>
+        </div>
+
+        <!-- Tarjetas de Ofertas Editables Lado a Lado / Apiladas -->
+        <div id="comparator-cards-container" class="space-y-3">
+          <!-- Renderizado dinámico -->
+        </div>
+
+        <!-- Botón Agregar Oferta -->
+        <button id="add-offer-btn" onclick="addComparatorOffer()" class="w-full py-3 rounded-2xl bg-[#131c2e] hover:bg-slate-800 border border-dashed border-cyan-500/40 text-cyan-300 font-bold text-xs flex items-center justify-center gap-2 transition active:scale-[0.99]">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          + Agregar otra oferta simultánea
+        </button>
+      </section>
+
+      <!-- ======================================================= -->
+      <!-- VISTA 3: REGISTRAR / EDITAR MANUALMENTE PEDIDO O GASTO  -->
+      <!-- ======================================================= -->
+      <section id="view-registrar" class="hidden space-y-4">
+        <!-- Encabezado de Formulario -->
+        <div class="flex items-center justify-between">
+          <div>
+            <h2 id="register-view-title" class="text-base font-extrabold text-white">Nuevo Registro Manual</h2>
+            <p id="register-view-subtitle" class="text-xs text-slate-400">Escribe cada detalle de tu pedido o gasto</p>
+          </div>
+          <button id="cancel-edit-btn" onclick="cancelEditMode()" class="hidden px-3 py-1.5 rounded-xl bg-rose-500/15 text-rose-300 border border-rose-500/30 text-xs font-bold">
+            Cancelar Edición
+          </button>
+        </div>
+
+        <!-- Selector Tipo: Nuevo Pedido vs Nuevo Gasto -->
+        <div id="register-type-switcher" class="grid grid-cols-2 gap-2 bg-[#131c2e] p-1.5 rounded-2xl border border-[#1e293b]">
+          <button id="reg-tab-pedido" onclick="switchRegisterSubTab('pedido')" class="py-2.5 text-xs font-extrabold rounded-xl bg-emerald-500 text-slate-950 transition">
+            + Nuevo Pedido
+          </button>
+          <button id="reg-tab-gasto" onclick="switchRegisterSubTab('gasto')" class="py-2.5 text-xs font-extrabold rounded-xl text-slate-400 hover:text-white transition">
+            - Nuevo Gasto
+          </button>
+        </div>
+
+        <!-- FORMULARIO COMPLETO DE PEDIDO -->
+        <form id="form-pedido" onsubmit="handleSaveOrder(event)" class="bg-[#131c2e] border border-[#1e293b] rounded-2xl p-4 space-y-4">
+          <input type="hidden" id="editing-order-id" value="" />
+
+          <!-- Fecha y Hora separados para escritura cómoda en Android -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="order-date" class="block text-xs font-semibold text-slate-300 mb-1">Fecha *</label>
+              <input type="date" id="order-date" required class="w-full bg-[#090d16] border border-[#1e293b] focus:border-emerald-500 rounded-xl px-3 py-2.5 text-xs font-semibold text-white outline-none" />
+            </div>
+            <div>
+              <label for="order-time" class="block text-xs font-semibold text-slate-300 mb-1">Hora *</label>
+              <input type="time" id="order-time" required class="w-full bg-[#090d16] border border-[#1e293b] focus:border-emerald-500 rounded-xl px-3 py-2.5 text-xs font-semibold text-white outline-none" />
+            </div>
+          </div>
+
+          <!-- App de Reparto -->
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 mb-1.5">Aplicación *</label>
+            <div id="app-selector-grid" class="grid grid-cols-3 gap-2">
+              <!-- Botones generados por JS -->
+            </div>
+            <input type="hidden" id="order-app" value="PedidosYa" />
+          </div>
+
+          <!-- Comuna (Selector + opción escribir comuna personalizada) -->
+          <div class="space-y-2">
+            <label for="order-comuna" class="block text-xs font-semibold text-slate-300">Comuna / Zona *</label>
+            <select id="order-comuna" onchange="toggleCustomComunaInput()" class="w-full bg-[#090d16] border border-[#1e293b] focus:border-emerald-500 rounded-xl px-3 py-2.5 text-xs font-semibold text-white outline-none">
+              <!-- Opciones cargadas por JS -->
+            </select>
+            <div id="custom-comuna-wrapper" class="hidden">
+              <input type="text" id="order-comuna-custom" maxlength="40" placeholder="Escribe el nombre de la comuna o sector..." class="w-full bg-[#090d16] border border-cyan-500/50 focus:border-cyan-400 rounded-xl px-3 py-2.5 text-xs text-white outline-none" />
+            </div>
+          </div>
+
+          <!-- Pago Base, Propina y Bono/Dinámica -->
+          <div class="grid grid-cols-3 gap-2">
+            <div>
+              <label for="order-base" class="block text-[11px] font-semibold text-slate-300 mb-1">Pago Base ($)*</label>
+              <input type="number" id="order-base" min="0" step="10" required placeholder="3200" oninput="updateOrderPreview()" class="w-full bg-[#090d16] border border-[#1e293b] focus:border-emerald-500 rounded-xl px-2.5 py-2.5 text-sm font-bold text-white tabular-nums outline-none" />
+            </div>
+            <div>
+              <label for="order-tip" class="block text-[11px] font-semibold text-slate-300 mb-1">Propina ($)</label>
+              <input type="number" id="order-tip" min="0" step="10" placeholder="0" oninput="updateOrderPreview()" class="w-full bg-[#090d16] border border-[#1e293b] focus:border-emerald-500 rounded-xl px-2.5 py-2.5 text-sm font-bold text-emerald-400 tabular-nums outline-none" />
+            </div>
+            <div>
+              <label for="order-bonus" class="block text-[11px] font-semibold text-slate-300 mb-1">Bono/Dinám. ($)</label>
+              <input type="number" id="order-bonus" min="0" step="10" placeholder="0" oninput="updateOrderPreview()" class="w-full bg-[#090d16] border border-[#1e293b] focus:border-amber-500 rounded-xl px-2.5 py-2.5 text-sm font-bold text-amber-400 tabular-nums outline-none" />
+            </div>
+          </div>
+
+          <!-- Accesos rápidos de propina / bono -->
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span class="text-[11px] text-slate-400">Sumar propina:</span>
+            <button type="button" onclick="addQuickAmount('order-tip', 500)" class="px-2 py-1 rounded-lg bg-[#090d16] hover:bg-slate-800 border border-[#1e293b] text-[11px] font-semibold text-emerald-400 tabular-nums">+$500</button>
+            <button type="button" onclick="addQuickAmount('order-tip', 1000)" class="px-2 py-1 rounded-lg bg-[#090d16] hover:bg-slate-800 border border-[#1e293b] text-[11px] font-semibold text-emerald-400 tabular-nums">+$1.000</button>
+            <button type="button" onclick="addQuickAmount('order-bonus', 1000)" class="px-2 py-1 rounded-lg bg-[#090d16] hover:bg-slate-800 border border-[#1e293b] text-[11px] font-semibold text-amber-400 tabular-nums">+Bono $1.000</button>
+          </div>
+
+          <!-- Kilómetros y Duración (minutos) -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="order-km" class="block text-xs font-semibold text-slate-300 mb-1">Distancia (km) *</label>
+              <input type="number" id="order-km" min="0.1" max="200" step="0.1" required placeholder="Ej: 3.5" oninput="updateOrderPreview()" class="w-full bg-[#090d16] border border-[#1e293b] focus:border-cyan-500 rounded-xl px-3 py-2.5 text-sm font-bold text-cyan-400 tabular-nums outline-none" />
+            </div>
+            <div>
+              <label for="order-minutes" class="block text-xs font-semibold text-slate-300 mb-1">Duración (min)</label>
+              <input type="number" id="order-minutes" min="1" max="360" step="1" placeholder="Ej: 18" oninput="updateOrderPreview()" class="w-full bg-[#090d16] border border-[#1e293b] focus:border-amber-500 rounded-xl px-3 py-2.5 text-sm font-bold text-amber-300 tabular-nums outline-none" />
+            </div>
+          </div>
+
+          <!-- Notas escritas -->
+          <div>
+            <label for="order-note" class="block text-xs font-semibold text-slate-300 mb-1">Notas (opcional)</label>
+            <input type="text" id="order-note" maxlength="80" placeholder="Ej: Pedido doble, lluvia, edificio sin ascensor..." class="w-full bg-[#090d16] border border-[#1e293b] focus:border-emerald-500 rounded-xl px-3 py-2.5 text-xs text-white outline-none" />
+          </div>
+
+          <!-- Tarjeta de Cálculo en Vivo antes de guardar -->
+          <div class="bg-[#090d16] border border-emerald-500/35 rounded-2xl p-3.5 grid grid-cols-3 gap-2 text-center">
+            <div>
+              <span class="block text-[10px] uppercase tracking-wider text-slate-400">Total Pedido</span>
+              <span id="order-total-preview" class="text-base font-black text-emerald-400 tabular-nums">$0</span>
+            </div>
+            <div class="border-x border-[#1e293b]">
+              <span class="block text-[10px] uppercase tracking-wider text-slate-400">Rentabilidad</span>
+              <span id="order-km-rate-preview" class="text-sm font-extrabold text-cyan-400 tabular-nums">$0/km</span>
+            </div>
+            <div>
+              <span class="block text-[10px] uppercase tracking-wider text-slate-400">Ritmo Hora</span>
+              <span id="order-hr-rate-preview" class="text-sm font-extrabold text-amber-400 tabular-nums">$0/hr</span>
+            </div>
+          </div>
+
+          <button type="submit" id="submit-order-btn" class="w-full py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-sm shadow-lg shadow-emerald-500/25 transition active:scale-[0.98]">
+            Guardar Pedido
+          </button>
+        </form>
+
+        <!-- FORMULARIO COMPLETO DE GASTO -->
+        <form id="form-gasto" onsubmit="handleSaveExpense(event)" class="hidden bg-[#131c2e] border border-[#1e293b] rounded-2xl p-4 space-y-4">
+          <input type="hidden" id="editing-expense-id" value="" />
+
+          <!-- Fecha y Hora -->
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="expense-date" class="block text-xs font-semibold text-slate-300 mb-1">Fecha *</label>
+              <input type="date" id="expense-date" required class="w-full bg-[#090d16] border border-[#1e293b] focus:border-rose-500 rounded-xl px-3 py-2.5 text-xs font-semibold text-white outline-none" />
+            </div>
+            <div>
+              <label for="expense-time" class="block text-xs font-semibold text-slate-300 mb-1">Hora *</label>
+              <input type="time" id="expense-time" required class="w-full bg-[#090d16] border border-[#1e293b] focus:border-rose-500 rounded-xl px-3 py-2.5 text-xs font-semibold text-white outline-none" />
+            </div>
+          </div>
+
+          <!-- Categoría -->
+          <div>
+            <label for="expense-category" class="block text-xs font-semibold text-slate-300 mb-1">Categoría de Gasto *</label>
+            <select id="expense-category" class="w-full bg-[#090d16] border border-[#1e293b] focus:border-rose-500 rounded-xl px-3 py-2.5 text-sm font-semibold text-white outline-none">
+              <option value="Bencina">⛽ Bencina / Combustible</option>
+              <option value="Mantención">🔧 Mantención / Aceite / Neumáticos</option>
+              <option value="Plan Datos">📱 Plan Datos / Recarga Móvil</option>
+              <option value="Comida/Agua">🥤 Comida / Agua / Colación</option>
+              <option value="Equipamiento">🎒 Equipamiento / Mochila / Soporte</option>
+              <option value="Otro">🧾 Otro Gasto</option>
+            </select>
+          </div>
+
+          <!-- Monto -->
+          <div>
+            <label for="expense-amount" class="block text-xs font-semibold text-slate-300 mb-1">Monto ($ CLP) *</label>
+            <input type="number" id="expense-amount" min="1" step="10" required placeholder="Ej: 10000" class="w-full bg-[#090d16] border border-[#1e293b] focus:border-rose-500 rounded-xl px-3 py-2.5 text-base font-extrabold text-rose-400 tabular-nums outline-none" />
+            <div class="flex flex-wrap items-center gap-1.5 mt-2">
+              <span class="text-[11px] text-slate-400">Monto rápido:</span>
+              <button type="button" onclick="setExpenseAmount(2500)" class="px-2.5 py-1 rounded-lg bg-[#090d16] hover:bg-slate-800 border border-[#1e293b] text-[11px] font-semibold text-rose-400 tabular-nums">$2.500</button>
+              <button type="button" onclick="setExpenseAmount(5000)" class="px-2.5 py-1 rounded-lg bg-[#090d16] hover:bg-slate-800 border border-[#1e293b] text-[11px] font-semibold text-rose-400 tabular-nums">$5.000</button>
+              <button type="button" onclick="setExpenseAmount(10000)" class="px-2.5 py-1 rounded-lg bg-[#090d16] hover:bg-slate-800 border border-[#1e293b] text-[11px] font-semibold text-rose-400 tabular-nums">$10.000</button>
+              <button type="button" onclick="setExpenseAmount(15000)" class="px-2.5 py-1 rounded-lg bg-[#090d16] hover:bg-slate-800 border border-[#1e293b] text-[11px] font-semibold text-rose-400 tabular-nums">$15.000</button>
+            </div>
+          </div>
+
+          <!-- Descripción Escrita -->
+          <div>
+            <label for="expense-note" class="block text-xs font-semibold text-slate-300 mb-1">Descripción escrita *</label>
+            <input type="text" id="expense-note" maxlength="80" placeholder="Ej: Bencina 93 Copec Av. Macul, cambio aceite..." class="w-full bg-[#090d16] border border-[#1e293b] focus:border-rose-500 rounded-xl px-3 py-2.5 text-xs text-white outline-none" />
+          </div>
+
+          <button type="submit" id="submit-expense-btn" class="w-full py-3.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-extrabold text-sm shadow-lg shadow-rose-500/25 transition active:scale-[0.98]">
+            Guardar Gasto
+          </button>
+        </form>
+      </section>
+
+      <!-- ======================================================= -->
+      <!-- VISTA 4: STATS & APPS (Tabla Comparativa y Gráficos)    -->
+      <!-- ======================================================= -->
+      <section id="view-estadisticas" class="hidden space-y-4">
+        <!-- Tabla Comparativa entre Aplicaciones -->
+        <div class="bg-[#131c2e] border border-[#1e293b] rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h2 class="text-sm font-extrabold text-white">Comparativa entre Apps</h2>
+              <p class="text-[11px] text-slate-400">Rendimiento histórico por aplicación</p>
+            </div>
+            <span class="text-[10px] font-bold px-2 py-1 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/25">$/km • $/hr</span>
+          </div>
+
+          <div class="overflow-x-auto -mx-1 px-1">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="border-b border-[#1e293b] text-[10px] uppercase tracking-wider text-slate-400">
+                  <th class="py-2 pr-2">App</th>
+                  <th class="py-2 px-1.5 text-right">Ped.</th>
+                  <th class="py-2 px-1.5 text-right">Ingresos</th>
+                  <th class="py-2 px-1.5 text-right">Km</th>
+                  <th class="py-2 px-1.5 text-right">$/km</th>
+                  <th class="py-2 pl-1.5 text-right">$/hr</th>
+                </tr>
+              </thead>
+              <tbody id="apps-comparison-tbody" class="divide-y divide-[#1e293b]/70 text-xs tabular-nums">
+                <!-- Filas renderizadas por JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Gráfico 1: Ganancias por App -->
+        <div class="bg-[#131c2e] border border-[#1e293b] rounded-2xl p-4">
+          <h3 class="text-sm font-extrabold text-white mb-0.5">Ganancias por Aplicación</h3>
+          <p class="text-[11px] text-slate-400 mb-3">Participación total en pesos chilenos ($ CLP)</p>
+          <div class="relative h-56 w-full">
+            <canvas id="chart-apps-doughnut"></canvas>
+          </div>
+        </div>
+
+        <!-- Gráfico 2: Evolución Diaria (Últimos 7 días) -->
+        <div class="bg-[#131c2e] border border-[#1e293b] rounded-2xl p-4">
+          <h3 class="text-sm font-extrabold text-white mb-0.5">Evolución Diaria (Últimos 7 días)</h3>
+          <p class="text-[11px] text-slate-400 mb-3">Ingresos brutos vs. gastos diarios</p>
+          <div class="relative h-56 w-full">
+            <canvas id="chart-7days"></canvas>
+          </div>
+        </div>
+
+        <!-- Gráfico 3: Distribución de Gastos -->
+        <div class="bg-[#131c2e] border border-[#1e293b] rounded-2xl p-4">
+          <h3 class="text-sm font-extrabold text-white mb-0.5">Distribución de Gastos</h3>
+          <p class="text-[11px] text-slate-400 mb-3">En qué se va tu presupuesto operativo</p>
+          <div class="relative h-56 w-full">
+            <canvas id="chart-expenses-cat"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================= -->
+      <!-- VISTA 5: MAPA DE ZONAS RENTABLES (Santiago Leaflet)     -->
+      <!-- ======================================================= -->
+      <section id="view-mapa" class="hidden space-y-4">
+        <div class="bg-[#131c2e] border border-[#1e293b] rounded-2xl p-3.5 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h2 class="text-sm font-extrabold text-white">Mapa de Zonas en Santiago</h2>
+              <p class="text-[11px] text-slate-400">Coloreado según tu meta mínima de $/km</p>
+            </div>
+            <button onclick="resetMapCenter()" class="text-[11px] font-bold px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 transition">
+              Centrar Stgo
+            </button>
+          </div>
+
+          <div class="relative rounded-2xl overflow-hidden border border-[#1e293b]">
+            <div id="santiago-map" class="h-80 w-full z-10"></div>
+          </div>
+
+          <!-- Leyenda dinámica según meta del usuario -->
+          <div class="grid grid-cols-3 gap-2 text-[11px]">
+            <div class="flex items-center gap-1.5 bg-[#090d16] px-2.5 py-1.5 rounded-xl border border-[#1e293b]">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0"></span>
+              <span id="legend-high-text" class="text-slate-300 truncate">&gt;$900/km Alta</span>
+            </div>
+            <div class="flex items-center gap-1.5 bg-[#090d16] px-2.5 py-1.5 rounded-xl border border-[#1e293b]">
+              <span class="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
+              <span id="legend-mid-text" class="text-slate-300 truncate">Meta cumple</span>
+            </div>
+            <div class="flex items-center gap-1.5 bg-[#090d16] px-2.5 py-1.5 rounded-xl border border-[#1e293b]">
+              <span class="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0"></span>
+              <span id="legend-low-text" class="text-slate-300 truncate">Bajo meta</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ranking de Comunas Ordenado por $/km -->
+        <div class="bg-[#131c2e] border border-[#1e293b] rounded-2xl p-4">
+          <h3 class="text-sm font-extrabold text-white mb-0.5">Ranking de Comunas por $/km</h3>
+          <p class="text-[11px] text-slate-400 mb-3">Toca una comuna para verla en el mapa</p>
+          <div id="zones-ranking-list" class="space-y-2.5">
+            <!-- Renderizado dinámico -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ======================================================= -->
+      <!-- VISTA 6: AJUSTES, METAS, RESPALDOS E INSTALACIÓN PWA    -->
+      <!-- ======================================================= -->
+      <section id="view-ajustes" class="hidden space-y-4">
+        <!-- Instalación PWA en Android -->
+        <div class="bg-gradient-to-br from-[#131c2e] to-[#0f2922] border border-emerald-500/35 rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between gap-2">
+            <div>
+              <h2 class="text-sm font-extrabold text-white">Instalar RiderTrack en Android</h2>
+              <p class="text-[11px] text-emerald-300">Funciona como app nativa y sin internet</p>
+            </div>
+            <button onclick="triggerPWAInstall()" class="px-3.5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs shadow-lg shadow-emerald-500/20 transition active:scale-95 shrink-0">
+              Instalar en Celular
+            </button>
+          </div>
+
+          <div class="bg-[#090d16]/85 border border-[#1e293b] rounded-xl p-3 space-y-1.5">
+            <p class="text-[11px] font-bold text-slate-200">Guía paso a paso en Google Chrome (Android):</p>
+            <ol class="text-xs text-slate-300 space-y-1 list-decimal list-inside leading-relaxed">
+              <li>Abre esta app en <strong class="text-white">Google Chrome</strong> en tu celular.</li>
+              <li>Toca el botón verde <strong class="text-emerald-400">"Instalar en Celular"</strong> de arriba, o toca el menú de tres puntos <strong class="text-white">(⋮)</strong> arriba a la derecha.</li>
+              <li>Elige <strong class="text-emerald-400">"Instalar aplicación"</strong> o <strong class="text-emerald-400">"Añadir a pantalla de inicio"</strong>.</li>
+            </ol>
+          </div>
+        </div>
+
+        <!-- Configuración de Metas y Costos Operativos -->
+        <div class="bg-[#131c2e] border border-[#1e293b] rounded-2xl p-4 space-y-3">
+          <div>
+            <h3 class="text-sm font-extrabold text-white">Metas y Costo Operativo</h3>
+            <p class="text-[11px] text-slate-400">Se usan en el Comparador en Vivo y en el Mapa</p>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label for="setting-min-per-km" class="block text-xs font-semibold text-slate-300 mb-1">Meta mínima ($/km)</label>
+              <input type="number" id="setting-min-per-km" min="100" max="10000" step="10" value="750" class="w-full bg-[#090d16] border border-[#1e293b] focus:border-emerald-500 rounded-xl px-3 py-2.5 text-sm font-bold text-emerald-400 tabular-nums outline-none" />
+            </div>
+            <div>
+              <label for="setting-cost-per-km" class="block text-xs font-semibold text-slate-300 mb-1">Costo bencina ($/km)</label>
+              <input type="number" id="setting-cost-per-km" min="0" max="5000" step="5" value="95" class="w-full bg-[#090d16] border border-[#1e293b] focus:border-rose-500 rounded-xl px-3 py-2.5 text-sm font-bold text-rose-400 tabular-nums outline-none" />
+            </div>
+          </div>
+
+          <button onclick="saveUserSettings()" class="w-full py-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/35 font-bold text-xs transition active:scale-[0.99]">
+            Guardar Metas
+          </button>
+        </div>
+
+        <!-- Memoria Local y Respaldos JSON / CSV -->
+        <div class="bg-[#131c2e] border border-[#1e293b] rounded-2xl p-4 space-y-3">
+          <div class="flex items-center justify-between">
+            <div>
+              <h3 class="text-sm font-extrabold text-white">Respaldos y Datos Locales</h3>
+              <p class="text-[11px] text-slate-400">Guardado 100% en tu teléfono</p>
+            </div>
+            <span id="storage-summary-pill" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-[#090d16] border border-[#1e293b] text-cyan-400 tabular-nums">0 ped • 0 KB</span>
+          </div>
+
+          <button onclick="exportJSON()" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-[#090d16] hover:bg-slate-900 text-emerald-300 border border-[#1e293b] font-bold text-xs transition">
+            <span>Exportar Respaldo (JSON)</span>
+            <span class="text-[10px] text-slate-400">Guardar / Enviar</span>
+          </button>
+
+          <label class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-[#090d16] hover:bg-slate-900 text-cyan-300 border border-[#1e293b] font-bold text-xs transition cursor-pointer">
+            <span>Restaurar Respaldo (JSON)</span>
+            <span class="text-[10px] text-slate-400">Cargar archivo</span>
+            <input type="file" id="import-json-input" accept=".json,application/json" class="hidden" onchange="importJSON(event)" />
+          </label>
+
+          <button onclick="exportCSV()" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-[#090d16] hover:bg-slate-900 text-amber-300 border border-[#1e293b] font-bold text-xs transition">
+            <span>Exportar Planilla Excel (CSV)</span>
+            <span class="text-[10px] text-slate-400">Compatible Excel CL</span>
+          </button>
+        </div>
+
+        <!-- Reinicio / Datos Demo -->
+        <div class="bg-[#131c2e] border border-[#1e293b] rounded-2xl p-4 space-y-2.5">
+          <h3 class="text-sm font-extrabold text-white">Control de Registros</h3>
+
+          <button onclick="confirmClearAllData()" class="w-full py-3 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/35 font-bold text-xs transition">
+            Limpiar datos de ejemplo (Empezar en 0)
+          </button>
+
+          <button onclick="confirmLoadSampleData()" class="w-full py-3 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-bold text-xs transition">
+            Volver a cargar datos de ejemplo (Santiago)
+          </button>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- ========================================================= -->
+    <!-- BARRA DE NAVEGACIÓN INFERIOR (5 PESTAÑAS + BOTÓN CENTRAL) -->
+    <!-- ========================================================= -->
+    <nav class="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[480px] z-30 bg-[#0d1321]/95 backdrop-blur-lg border-t border-[#1e293b] px-1.5 pt-1.5 pb-2.5">
+      <div class="grid grid-cols-5 items-center">
+        <!-- 1. Resumen -->
+        <button data-tab="resumen" onclick="switchTab('resumen')" class="nav-btn flex flex-col items-center justify-center py-1 text-emerald-400 transition">
+          <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/></svg>
+          <span class="text-[10px] font-bold">Resumen</span>
+        </button>
+
+        <!-- 2. Comparar Ofertas -->
+        <button data-tab="comparar" onclick="switchTab('comparar')" class="nav-btn flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-200 transition">
+          <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0012 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 01-2.031.352 5.988 5.988 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.971zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.989 5.989 0 01-2.031.352 5.989 5.989 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.971z"/></svg>
+          <span class="text-[10px] font-bold">Comparar</span>
+        </button>
+
+        <!-- 3. Botón Central Elevado: Registrar (+) -->
+        <div class="flex flex-col items-center justify-center -mt-5">
+          <button data-tab="registrar" onclick="openNewRegisterForm()" aria-label="Registrar nuevo pedido o gasto" class="nav-btn w-13 h-13 w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-slate-950 shadow-lg shadow-emerald-500/35 border-2 border-[#090d16] flex items-center justify-center active:scale-90 transition">
+            <svg class="w-6 h-6 stroke-[2.8]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+          </button>
+          <span id="nav-registrar-label" class="text-[10px] font-bold text-slate-300 mt-0.5">Registrar</span>
+        </div>
+
+        <!-- 4. Stats & Apps -->
+        <button data-tab="estadisticas" onclick="switchTab('estadisticas')" class="nav-btn flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-200 transition">
+          <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/></svg>
+          <span class="text-[10px] font-bold">Stats</span>
+        </button>
+
+        <!-- 5. Mapa Zonas -->
+        <button data-tab="mapa" onclick="switchTab('mapa')" class="nav-btn flex flex-col items-center justify-center py-1 text-slate-400 hover:text-slate-200 transition">
+          <svg class="w-5 h-5 mb-0.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
+          <span class="text-[10px] font-bold">Mapa Zonas</span>
+        </button>
+      </div>
+    </nav>
+
+    <!-- ========================================================= -->
+    <!-- MODAL GUÍA DE INSTALACIÓN ANDROID (SI NO HAY PROMPT AUTO) -->
+    <!-- ========================================================= -->
+    <div id="install-guide-modal" class="hidden fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+      <div class="w-full max-w-[400px] bg-[#131c2e] border border-[#1e293b] rounded-3xl p-5 shadow-2xl space-y-4">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="p-2 rounded-xl bg-emerald-500/15 text-emerald-400">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3"/></svg>
+            </span>
+            <h3 class="text-base font-extrabold text-white">Instalar en tu Android</h3>
+          </div>
+          <button onclick="closeInstallGuideModal()" class="p-1.5 rounded-xl bg-slate-800 text-slate-300">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <p class="text-xs text-slate-300 leading-relaxed">
+          Para instalar <strong class="text-white">RiderTrack Chile</strong> en tu pantalla de inicio y usarla como app nativa:
+        </p>
+
+        <div class="space-y-2.5 text-xs">
+          <div class="bg-[#090d16] border border-[#1e293b] rounded-xl p-3 flex items-start gap-2.5">
+            <span class="w-6 h-6 rounded-lg bg-emerald-500 text-slate-950 font-black flex items-center justify-center shrink-0">1</span>
+            <p class="text-slate-200">Abre esta página en <strong class="text-white">Google Chrome</strong> en tu celular Android.</p>
+          </div>
+          <div class="bg-[#090d16] border border-[#1e293b] rounded-xl p-3 flex items-start gap-2.5">
+            <span class="w-6 h-6 rounded-lg bg-emerald-500 text-slate-950 font-black flex items-center justify-center shrink-0">2</span>
+            <p class="text-slate-200">Toca el ícono de los tres puntos <strong class="text-white">(⋮)</strong> en la esquina superior derecha.</p>
+          </div>
+          <div class="bg-[#090d16] border border-[#1e293b] rounded-xl p-3 flex items-start gap-2.5">
+            <span class="w-6 h-6 rounded-lg bg-emerald-500 text-slate-950 font-black flex items-center justify-center shrink-0">3</span>
+            <p class="text-slate-200">Toca <strong class="text-emerald-400">"Instalar aplicación"</strong> o <strong class="text-emerald-400">"Añadir a pantalla de inicio"</strong> y confirma.</p>
+          </div>
+        </div>
+
+        <button onclick="closeInstallGuideModal()" class="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold text-xs transition">
+          Entendido
+        </button>
+      </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- MODAL DE CONFIRMACIÓN PERSONALIZADO (SIN alert/confirm)   -->
+    <!-- ========================================================= -->
+    <div id="confirm-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+      <div class="w-full max-w-[360px] bg-[#131c2e] border border-[#1e293b] rounded-2xl p-5 shadow-2xl space-y-4">
+        <h3 id="confirm-title" class="text-base font-bold text-white">¿Confirmar acción?</h3>
+        <p id="confirm-message" class="text-xs text-slate-300 leading-relaxed">Esta acción modificará tus registros locales.</p>
+        <div class="flex items-center gap-2.5 pt-1">
+          <button onclick="closeConfirmModal()" class="flex-1 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition">
+            Cancelar
+          </button>
+          <button id="confirm-action-btn" class="flex-1 py-2.5 rounded-xl bg-rose-500 hover:bg-rose-400 text-white font-bold text-xs transition">
+            Confirmar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOAST NOTIFICACIONES -->
+    <div id="toast-container" class="fixed top-16 left-1/2 -translate-x-1/2 z-50 pointer-events-none w-full max-w-[440px] px-4 flex flex-col items-center gap-2"></div>
+
+  </div>
+
+  <!-- ========================================================= -->
+  <!-- JAVASCRIPT COMPLETO DE RIDERTRACK CHILE                   -->
+  <!-- ========================================================= -->
+  <script>
+    const STORAGE_KEY = 'ridertrack_chile_v2';
+
+    const APP_CONFIG = {
+      'PedidosYa': { color: '#fa0050', bg: 'rgba(250, 0, 80, 0.16)', border: 'rgba(250, 0, 80, 0.45)', short: 'PY' },
+      'Uber Eats': { color: '#06c167', bg: 'rgba(6, 193, 103, 0.16)', border: 'rgba(6, 193, 103, 0.45)', short: 'UE' },
+      'Rappi':     { color: '#ff441f', bg: 'rgba(255, 68, 31, 0.16)', border: 'rgba(255, 68, 31, 0.45)', short: 'RP' },
+      'DiDi Food': { color: '#ff7d00', bg: 'rgba(255, 125, 0, 0.16)', border: 'rgba(255, 125, 0, 0.45)', short: 'DD' },
+      'Otra':      { color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.16)', border: 'rgba(139, 92, 246, 0.45)', short: 'OT' }
+    };
+
+    // Coordenadas reales de comunas del Gran Santiago
+    const SANTIAGO_COMUNAS = {
+      'Providencia':         { lat: -33.4314, lng: -70.6093 },
+      'Las Condes':          { lat: -33.4117, lng: -70.5667 },
+      'Santiago Centro':     { lat: -33.4489, lng: -70.6693 },
+      'Ñuñoa':               { lat: -33.4569, lng: -70.6036 },
+      'Macul':               { lat: -33.4867, lng: -70.5983 },
+      'La Florida':          { lat: -33.5228, lng: -70.5983 },
+      'Vitacura':            { lat: -33.3833, lng: -70.5750 },
+      'Lo Barnechea':        { lat: -33.3500, lng: -70.5167 },
+      'Peñalolén':           { lat: -33.4861, lng: -70.5333 },
+      'La Reina':            { lat: -33.4417, lng: -70.5417 },
+      'Maipú':               { lat: -33.5106, lng: -70.7573 },
+      'Puente Alto':         { lat: -33.6117, lng: -70.5758 },
+      'San Miguel':          { lat: -33.4969, lng: -70.6517 },
+      'Estación Central':    { lat: -33.4592, lng: -70.6925 },
+      'Recoleta':            { lat: -33.4067, lng: -70.6417 },
+      'Independencia':       { lat: -33.4150, lng: -70.6650 },
+      'Quilicura':           { lat: -33.3667, lng: -70.7333 },
+      'San Bernardo':        { lat: -33.5922, lng: -70.6996 },
+      'La Cisterna':         { lat: -33.5333, lng: -70.6667 },
+      'El Bosque':           { lat: -33.5667, lng: -70.6750 },
+      'Pudahuel':            { lat: -33.4417, lng: -70.7667 },
+      'Quinta Normal':       { lat: -33.4417, lng: -70.7000 }
+    };
+
+    // Estado persistente
+    let appState = {
+      orders: [],
+      expenses: [],
+      settings: {
+        minPerKm: 750,
+        costPerKm: 95
+      },
+      isDemoData: true
+    };
+
+    // Estado de UI
+    let currentTab = 'resumen';
+    let currentPeriod = 'semana';
+    let deferredInstallPrompt = null;
+
+    // Estado del Comparador en Vivo
+    let comparatorOffers = [];
+    let nextOfferSeq = 1;
+
+    // Instancias Chart.js y Leaflet
+    let chartAppsDoughnut = null;
+    let chart7Days = null;
+    let chartExpensesCat = null;
+    let leafletMap = null;
+    let mapLayerGroup = null;
+    let zoneMarkersByComuna = {};
+
+    /**
+     * Formateador Pesos Chilenos ($ CLP)
+     */
+    function formatCLP(value) {
+      const num = Math.round(Number(value) || 0);
+      const isNegative = num < 0;
+      const absFormatted = Math.abs(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+      return (isNegative ? '-$' : '$') + absFormatted;
+    }
+
+    function formatKm(km) {
+      const val = Number(km) || 0;
+      return val.toFixed(1).replace('.', ',') + ' km';
+    }
+
+    function escapeHTML(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    /**
+     * Fechas relativas y locales
+     */
+    function buildRelativeISO(daysAgo, hour, minute) {
+      const d = new Date();
+      d.setDate(d.getDate() - daysAgo);
+      d.setHours(hour, minute, 0, 0);
+      const pad = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
+    function getNowDateAndTime() {
+      const now = new Date();
+      const pad = (n) => String(n).padStart(2, '0');
+      return {
+        date: `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`,
+        time: `${pad(now.getHours())}:${pad(now.getMinutes())}`
+      };
+    }
+
+    /**
+     * Datos de ejemplo iniciales en Santiago de Chile
+     */
+    function createSampleDataset() {
+      return {
+        orders: [
+          { id: 'ord_01', app: 'PedidosYa', basePay: 3200, tip: 1000, bonus: 400, km: 3.2, minutes: 16, comuna: 'Providencia',     datetime: buildRelativeISO(0, 13, 45), note: 'Almuerzo oficina' },
+          { id: 'ord_02', app: 'Uber Eats', basePay: 2900, tip: 600,  bonus: 0,   km: 3.4, minutes: 18, comuna: 'Las Condes',      datetime: buildRelativeISO(0, 12, 20), note: 'Pedido rápido' },
+          { id: 'ord_03', app: 'Rappi',     basePay: 2200, tip: 0,    bonus: 0,   km: 4.1, minutes: 24, comuna: 'Santiago Centro', datetime: buildRelativeISO(0, 11, 10), note: 'Tráfico centro' },
+          { id: 'ord_04', app: 'Uber Eats', basePay: 4000, tip: 1200, bonus: 500, km: 4.5, minutes: 22, comuna: 'Providencia',     datetime: buildRelativeISO(1, 21, 15), note: 'Cena horario punta' },
+          { id: 'ord_05', app: 'PedidosYa', basePay: 3100, tip: 500,  bonus: 0,   km: 4.6, minutes: 23, comuna: 'Ñuñoa',           datetime: buildRelativeISO(1, 20, 5),  note: 'Plaza Ñuñoa' },
+          { id: 'ord_06', app: 'DiDi Food', basePay: 2500, tip: 300,  bonus: 0,   km: 3.8, minutes: 19, comuna: 'Macul',           datetime: buildRelativeISO(1, 14, 30), note: 'Turno tarde' },
+          { id: 'ord_07', app: 'PedidosYa', basePay: 3600, tip: 1000, bonus: 400, km: 4.2, minutes: 20, comuna: 'Las Condes',      datetime: buildRelativeISO(2, 20, 40), note: 'Bono nocturno' },
+          { id: 'ord_08', app: 'Rappi',     basePay: 2600, tip: 400,  bonus: 0,   km: 4.1, minutes: 22, comuna: 'La Florida',      datetime: buildRelativeISO(2, 19, 10), note: 'Sector Mall' },
+          { id: 'ord_09', app: 'Uber Eats', basePay: 3900, tip: 1100, bonus: 0,   km: 4.0, minutes: 19, comuna: 'Vitacura',        datetime: buildRelativeISO(3, 21, 0),  note: 'Pedido doble' },
+          { id: 'ord_10', app: 'DiDi Food', basePay: 2100, tip: 0,    bonus: 0,   km: 4.3, minutes: 25, comuna: 'Santiago Centro', datetime: buildRelativeISO(3, 13, 50), note: 'Sin propina' },
+          { id: 'ord_11', app: 'PedidosYa', basePay: 3300, tip: 700,  bonus: 0,   km: 5.0, minutes: 24, comuna: 'Ñuñoa',           datetime: buildRelativeISO(4, 20, 15), note: 'Av. Irarrázaval' },
+          { id: 'ord_12', app: 'Uber Eats', basePay: 3500, tip: 1000, bonus: 0,   km: 3.9, minutes: 18, comuna: 'Providencia',     datetime: buildRelativeISO(5, 19, 45), note: 'Metro Tobalaba' },
+          { id: 'ord_13', app: 'Rappi',     basePay: 2400, tip: 500,  bonus: 0,   km: 3.8, minutes: 20, comuna: 'Macul',           datetime: buildRelativeISO(5, 14, 15), note: 'Av. Macul' },
+          { id: 'ord_14', app: 'PedidosYa', basePay: 2700, tip: 300,  bonus: 0,   km: 5.4, minutes: 26, comuna: 'La Florida',      datetime: buildRelativeISO(6, 20, 30), note: 'Tramo largo' }
+        ],
+        expenses: [
+          { id: 'exp_01', category: 'Comida/Agua', amount: 2500,  datetime: buildRelativeISO(0, 9, 30),  note: 'Agua y empanada' },
+          { id: 'exp_02', category: 'Bencina',     amount: 10000, datetime: buildRelativeISO(1, 18, 0),  note: 'Copec 93 octanos' },
+          { id: 'exp_03', category: 'Plan Datos',  amount: 8990,  datetime: buildRelativeISO(3, 12, 0),  note: 'Bolsa datos mensual' },
+          { id: 'exp_04', category: 'Bencina',     amount: 9500,  datetime: buildRelativeISO(5, 17, 30), note: 'Carga estanque' }
+        ],
+        settings: {
+          minPerKm: 750,
+          costPerKm: 95
+        },
+        isDemoData: true
+      };
+    }
+
+    /**
+     * Persistencia en localStorage
+     */
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) {
+          appState = createSampleDataset();
+          saveState();
+        } else {
+          const parsed = JSON.parse(raw);
+          appState = {
+            orders: Array.isArray(parsed.orders) ? parsed.orders : [],
+            expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
+            settings: {
+              minPerKm: Number(parsed.settings?.minPerKm) || 750,
+              costPerKm: Number(parsed.settings?.costPerKm) >= 0 ? Number(parsed.settings.costPerKm) : 95
+            },
+            isDemoData: Boolean(parsed.isDemoData)
+          };
+        }
+      } catch (e) {
+        appState = { orders: [], expenses: [], settings: { minPerKm: 750, costPerKm: 95 }, isDemoData: false };
+      }
+    }
+
+    function saveState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(appState));
+      } catch (e) {
+        showToast('Error al guardar en memoria local', 'error');
+      }
+    }
+
+    /**
+     * Toast y Modales personalizados
+     */
+    function showToast(message, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const styles = type === 'error'
+        ? 'bg-rose-950/95 border-rose-500/60 text-rose-200'
+        : type === 'info'
+        ? 'bg-slate-900/95 border-cyan-500/60 text-cyan-200'
+        : 'bg-emerald-950/95 border-emerald-500/60 text-emerald-200';
+
+      toast.className = `${styles} border px-4 py-2.5 rounded-2xl shadow-xl text-xs font-bold backdrop-blur-md transition-all duration-300`;
+      toast.textContent = message;
+      container.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(-6px)';
+        setTimeout(() => toast.remove(), 280);
+      }, 2600);
+    }
+
+    function openConfirmModal({ title, message, confirmText = 'Confirmar', confirmClass = 'bg-rose-500 hover:bg-rose-400 text-white', onConfirm }) {
+      document.getElementById('confirm-title').textContent = title;
+      document.getElementById('confirm-message').textContent = message;
+      const btn = document.getElementById('confirm-action-btn');
+      btn.textContent = confirmText;
+      btn.className = `flex-1 py-2.5 rounded-xl font-bold text-xs transition ${confirmClass}`;
+      btn.onclick = () => {
+        closeConfirmModal();
+        if (typeof onConfirm === 'function') onConfirm();
+      };
+      document.getElementById('confirm-modal').classList.remove('hidden');
+    }
+
+    function closeConfirmModal() {
+      document.getElementById('confirm-modal').classList.add('hidden');
+    }
+
+    /**
+     * =========================================================
+     * PWA REAL EN ANDROID: MANIFEST DINÁMICO, SW Y PROMPT
+     * =========================================================
+     */
+    function initPWA() {
+      // 1. Generar ícono PNG 512x512 en Canvas para que Chrome Android valide el Manifest
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 512;
+        const ctx = canvas.getContext('2d');
+
+        // Fondo oscuro redondeado
+        ctx.fillStyle = '#090d16';
+        ctx.fillRect(0, 0, 512, 512);
+
+        // Aro exterior
+        ctx.strokeStyle = '#10b981';
+        ctx.lineWidth = 30;
+        ctx.beginPath();
+        ctx.arc(256, 256, 175, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Línea de ruta rentable
+        ctx.strokeStyle = '#06b6d4';
+        ctx.lineWidth = 32;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(165, 295);
+        ctx.lineTo(235, 218);
+        ctx.lineTo(285, 260);
+        ctx.lineTo(352, 182);
+        ctx.stroke();
+
+        // Punto destino
+        ctx.fillStyle = '#10b981';
+        ctx.beginPath();
+        ctx.arc(352, 182, 24, 0, Math.PI * 2);
+        ctx.fill();
+
+        const pngDataUrl = canvas.toDataURL('image/png');
+        const manifestObj = {
+          name: 'RiderTrack Chile',
+          short_name: 'RiderTrack',
+          description: 'Control de ganancias, comparador de ofertas y zonas rentables para repartidores en Chile.',
+          start_url: window.location.href,
+          display: 'standalone',
+          orientation: 'portrait',
+          background_color: '#090d16',
+          theme_color: '#090d16',
+          icons: [
+            { src: pngDataUrl, sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
+            { src: pngDataUrl, sizes: '512x512', type: 'image/png', purpose: 'any maskable' }
+          ]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifestObj)], { type: 'application/manifest+json' });
+        document.getElementById('pwa-manifest-link').href = URL.createObjectURL(manifestBlob);
+      } catch (e) {
+        // Fallback silencioso si canvas falla
+      }
+
+      // 2. Registrar Service Worker para soporte offline
+      if ('serviceWorker' in navigator && window.location.protocol.startsWith('http')) {
+        const swScript = `
+          const CACHE_NAME = 'ridertrack-cl-v2';
+          self.addEventListener('install', (event) => {
+            self.skipWaiting();
+          });
+          self.addEventListener('activate', (event) => {
+            event.waitUntil(self.clients.claim());
+          });
+          self.addEventListener('fetch', (event) => {
+            if (event.request.method !== 'GET') return;
+            event.respondWith(
+              fetch(event.request)
+                .then((response) => {
+                  const clone = response.clone();
+                  caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+                  return response;
+                })
+                .catch(() => caches.match(event.request))
+            );
+          });
+        `;
+        const swBlob = new Blob([swScript], { type: 'application/javascript' });
+        navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(() => {});
+      }
+
+      // 3. Capturar evento beforeinstallprompt de Chrome Android
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        const btn = document.getElementById('header-install-btn');
+        if (btn) btn.classList.add('winner-glow');
+      });
+
+      window.addEventListener('appinstalled', () => {
+        deferredInstallPrompt = null;
+        showToast('¡RiderTrack Chile instalado en tu celular!');
+      });
+    }
+
+    async function triggerPWAInstall() {
+      if (deferredInstallPrompt) {
+        deferredInstallPrompt.prompt();
+        const choice = await deferredInstallPrompt.userChoice;
+        if (choice.outcome === 'accepted') {
+          showToast('Instalando RiderTrack Chile...');
+        }
+        deferredInstallPrompt = null;
+      } else {
+        document.getElementById('install-guide-modal').classList.remove('hidden');
+      }
+    }
+
+    function closeInstallGuideModal() {
+      document.getElementById('install-guide-modal').classList.add('hidden');
+    }
+
+    /**
+     * =========================================================
+     * NAVEGACIÓN ENTRE PESTAÑAS
+     * =========================================================
+     */
+    function switchTab(tabName) {
+      currentTab = tabName;
+      const views = ['resumen', 'comparar', 'registrar', 'estadisticas', 'mapa', 'ajustes'];
+      views.forEach((v) => {
+        const el = document.getElementById(`view-${v}`);
+        if (el) el.classList.toggle('hidden', v !== tabName);
+      });
+
+      document.querySelectorAll('.nav-btn').forEach((btn) => {
+        const isActive = btn.dataset.tab === tabName;
+        if (btn.dataset.tab !== 'registrar') {
+          btn.classList.toggle('text-emerald-400', isActive);
+          btn.classList.toggle('text-slate-400', !isActive);
+        }
+      });
+
+      const regLabel = document.getElementById('nav-registrar-label');
+      if (regLabel) {
+        regLabel.className = `text-[10px] font-bold mt-0.5 ${tabName === 'registrar' ? 'text-emerald-400' : 'text-slate-300'}`;
+      }
+
+      const gearBtn = document.querySelector('.nav-header-btn');
+      if (gearBtn) {
+        gearBtn.classList.toggle('border-emerald-500', tabName === 'ajustes');
+        gearBtn.classList.toggle('text-emerald-400', tabName === 'ajustes');
+      }
+
+      if (tabName === 'resumen') renderResumenView();
+      else if (tabName === 'comparar') renderComparatorView();
+      else if (tabName === 'estadisticas') renderStatsView();
+      else if (tabName === 'mapa') renderMapView();
+      else if (tabName === 'ajustes') renderAjustesView();
+    }
+
+    function openNewRegisterForm() {
+      resetRegisterFormsToNew();
+      switchTab('registrar');
+    }
+
+    /**
+     * =========================================================
+     * VISTA 1: RESUMEN Y HISTORIAL CON EDICIÓN
+     * =========================================================
+     */
+    function getOrderTotal(order) {
+      return (Number(order.basePay) || 0) + (Number(order.tip) || 0) + (Number(order.bonus) || 0);
+    }
+
+    function filterByPeriod(items, period) {
+      if (period === 'todo') return items;
+
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+
+      if (period === 'hoy') {
+        return items.filter((item) => new Date(item.datetime) >= startOfToday);
+      }
+
+      if (period === 'semana') {
+        const day = now.getDay();
+        const diffToMonday = day === 0 ? 6 : day - 1;
+        const startOfWeek = new Date(startOfToday);
+        startOfWeek.setDate(startOfToday.getDate() - diffToMonday);
+        return items.filter((item) => new Date(item.datetime) >= startOfWeek);
+      }
+
+      if (period === 'mes') {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+        return items.filter((item) => new Date(item.datetime) >= startOfMonth);
+      }
+
+      return items;
+    }
+
+    function setPeriod(period) {
+      currentPeriod = period;
+      const labels = {
+        hoy: 'Hoy',
+        semana: 'Esta Semana',
+        mes: 'Este Mes',
+        todo: 'Histórico Total'
+      };
+      document.getElementById('period-label-text').textContent = labels[period] || 'Esta Semana';
+
+      document.querySelectorAll('.period-btn').forEach((btn) => {
+        const active = btn.dataset.period === period;
+        btn.classList.toggle('bg-emerald-500', active);
+        btn.classList.toggle('text-slate-950', active);
+        btn.classList.toggle('font-extrabold', active);
+        btn.classList.toggle('text-slate-400', !active);
+      });
+
+      renderResumenView();
+    }
+
+    function formatHumanDateTime(isoStr) {
+      const date = new Date(isoStr);
+      if (isNaN(date.getTime())) return isoStr;
+
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const yesterdayStart = new Date(todayStart);
+      yesterdayStart.setDate(todayStart.getDate() - 1);
+
+      const pad = (n) => String(n).padStart(2, '0');
+      const timeStr = `${pad(date.getHours())}:${pad(date.getMinutes())}`;
+
+      if (date >= todayStart) return `Hoy, ${timeStr}`;
+      if (date >= yesterdayStart) return `Ayer, ${timeStr}`;
+
+      const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+      return `${date.getDate()} ${months[date.getMonth()]}, ${timeStr}`;
+    }
+
+    function updateHeaderTodayPill() {
+      const todayOrders = filterByPeriod(appState.orders, 'hoy');
+      const todayExpenses = filterByPeriod(appState.expenses, 'hoy');
+      const gross = todayOrders.reduce((s, o) => s + getOrderTotal(o), 0);
+      const exp = todayExpenses.reduce((s, e) => s + Number(e.amount), 0);
+      const net = gross - exp;
+
+      const pill = document.getElementById('header-today-pill');
+      pill.textContent = `Hoy: ${formatCLP(net)}`;
+      pill.className = `block text-[11px] font-bold tabular-nums mt-0.5 truncate ${net >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+    }
+
+    function renderResumenView() {
+      updateHeaderTodayPill();
+
+      // Mostrar banner si hay datos demo activos
+      const demoBanner = document.getElementById('demo-data-banner');
+      if (demoBanner) {
+        demoBanner.classList.toggle('hidden', !appState.isDemoData || (appState.orders.length === 0 && appState.expenses.length === 0));
+      }
+
+      const orders = filterByPeriod(appState.orders, currentPeriod);
+      const expenses = filterByPeriod(appState.expenses, currentPeriod);
+
+      const grossIncome = orders.reduce((s, o) => s + getOrderTotal(o), 0);
+      const totalExpenses = expenses.reduce((s, e) => s + Number(e.amount), 0);
+      const netProfit = grossIncome - totalExpenses;
+      const totalKm = orders.reduce((s, o) => s + (Number(o.km) || 0), 0);
+      const totalTips = orders.reduce((s, o) => s + (Number(o.tip) || 0), 0);
+
+      // Cálculo de $/hora usando pedidos que tengan duración registrada
+      let timedIncome = 0;
+      let timedMinutes = 0;
+      orders.forEach((o) => {
+        const mins = Number(o.minutes) || 0;
+        if (mins > 0) {
+          timedIncome += getOrderTotal(o);
+          timedMinutes += mins;
+        }
+      });
+      const hourlyRate = timedMinutes > 0 ? Math.round((timedIncome / timedMinutes) * 60) : 0;
+      const hoursWhole = Math.floor(timedMinutes / 60);
+      const minsRem = timedMinutes % 60;
+
+      const margin = grossIncome > 0 ? Math.round((netProfit / grossIncome) * 100) : 0;
+      const grossPerKm = totalKm > 0 ? Math.round(grossIncome / totalKm) : 0;
+      const netPerKm = totalKm > 0 ? Math.round(netProfit / totalKm) : 0;
+      const avgKm = orders.length > 0 ? totalKm / orders.length : 0;
+      const avgOrder = orders.length > 0 ? Math.round(grossIncome / orders.length) : 0;
+
+      // Ganancia Neta Principal
+      const netEl = document.getElementById('kpi-net-profit');
+      netEl.textContent = formatCLP(netProfit);
+      netEl.className = `text-3xl sm:text-4xl font-black tracking-tight tabular-nums mt-1 ${netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
+
+      const marginBadge = document.getElementById('kpi-margin-badge');
+      marginBadge.textContent = `${margin}% margen`;
+      marginBadge.className = netProfit >= 0
+        ? 'px-2.5 py-1 rounded-xl text-xs font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 tabular-nums'
+        : 'px-2.5 py-1 rounded-xl text-xs font-bold bg-rose-500/15 text-rose-400 border border-rose-500/30 tabular-nums';
+
+      const flowTotal = grossIncome + totalExpenses;
+      const incPct = flowTotal > 0 ? Math.round((grossIncome / flowTotal) * 100) : 100;
+      document.getElementById('bar-income-share').style.width = `${incPct}%`;
+      document.getElementById('bar-expense-share').style.width = `${flowTotal > 0 ? 100 - incPct : 0}%`;
+      document.getElementById('bar-income-text').textContent = formatCLP(grossIncome);
+      document.getElementById('bar-expense-text').textContent = formatCLP(totalExpenses);
+
+      // 6 KPIs
+      document.getElementById('kpi-gross-income').textContent = formatCLP(grossIncome);
+      document.getElementById('kpi-order-count').textContent = `${orders.length} ${orders.length === 1 ? 'pedido' : 'pedidos'}`;
+
+      document.getElementById('kpi-total-expenses').textContent = formatCLP(totalExpenses);
+      document.getElementById('kpi-expense-count').textContent = `${expenses.length} ${expenses.length === 1 ? 'gasto' : 'gastos'}`;
+
+      document.getElementById('kpi-total-km').textContent = formatKm(totalKm);
+      document.getElementById('kpi-avg-km').textContent = `Prom: ${formatKm(avgKm)}/ped`;
+
+      document.getElementById('kpi-gross-per-km').textContent = `${formatCLP(grossPerKm)}/km`;
+      document.getElementById('kpi-net-per-km').textContent = `Neto: ${formatCLP(netPerKm)}/km`;
+
+      document.getElementById('kpi-hourly-rate').textContent = `${formatCLP(hourlyRate)}/hr`;
+      document.getElementById('kpi-total-hours').textContent = timedMinutes > 0 ? `${hoursWhole}h ${minsRem}m registrados` : 'Sin minutos aún';
+
+      document.getElementById('kpi-avg-order').textContent = formatCLP(avgOrder);
+      document.getElementById('kpi-tips-total').textContent = `Propinas: ${formatCLP(totalTips)}`;
+
+      // Filtros de búsqueda en historial
+      const query = (document.getElementById('history-search')?.value || '').trim().toLowerCase();
+      const filterType = document.getElementById('history-filter-type')?.value || 'TODOS';
+
+      let combined = [
+        ...orders.map((o) => ({ ...o, _type: 'order', _total: getOrderTotal(o) })),
+        ...expenses.map((e) => ({ ...e, _type: 'expense', _total: Number(e.amount) }))
+      ].sort((a, b) => new Date(b.datetime) - new Date(a.datetime));
+
+      if (filterType === 'GASTOS') {
+        combined = combined.filter((item) => item._type === 'expense');
+      } else if (filterType !== 'TODOS') {
+        combined = combined.filter((item) => item._type === 'order' && item.app === filterType);
+      }
+
+      if (query) {
+        combined = combined.filter((item) => {
+          const haystack = item._type === 'order'
+            ? `${item.app} ${item.comuna} ${item.note || ''}`.toLowerCase()
+            : `${item.category} ${item.note || ''}`.toLowerCase();
+          return haystack.includes(query);
+        });
+      }
+
+      document.getElementById('history-count-badge').textContent = `${combined.length} ${combined.length === 1 ? 'registro mostrado' : 'registros mostrados'}`;
+
+      const listEl = document.getElementById('activity-list');
+      if (combined.length === 0) {
+        listEl.innerHTML = `
+          <div class="bg-[#131c2e] border border-[#1e293b] rounded-2xl p-6 text-center space-y-2">
+            <p class="text-sm font-bold text-slate-200">No hay registros para mostrar</p>
+            <p class="text-xs text-slate-400">Toca el botón verde <strong class="text-emerald-400">+ Registrar</strong> abajo para escribir tu primer pedido o gasto.</p>
+          </div>
+        `;
+        return;
+      }
+
+      listEl.innerHTML = combined.map((item) => {
+        if (item._type === 'order') {
+          const cfg = APP_CONFIG[item.app] || APP_CONFIG['Otra'];
+          const perKm = item.km > 0 ? Math.round(item._total / item.km) : 0;
+          const minsTag = Number(item.minutes) > 0 ? ` • ${item.minutes}m` : '';
+          return `
+            <div class="bg-[#131c2e] border border-[#1e293b] rounded-2xl p-3.5 flex items-center justify-between gap-2.5">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl flex items-center justify-center font-extrabold text-xs shrink-0" style="background-color: ${cfg.bg}; color: ${cfg.color}; border: 1px solid ${cfg.border};">
+                  ${cfg.short}
+                </div>
+                <div class="min-w-0">
+                  <div class="flex items-center gap-1.5 flex-wrap">
+                    <span class="text-xs font-extrabold text-white">${escapeHTML(item.app)}</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 font-semibold truncate">${escapeHTML(item.comuna)}</span>
+                  </div>
+                  <div class="text-[11px] text-slate-400 mt-0.5 tabular-nums">
+                    ${formatHumanDateTime(item.datetime)} • <span class="text-cyan-400 font-semibold">${formatKm(item.km)}</span> (${formatCLP(perKm)}/km)${minsTag}
+                  </div>
+                  ${item.note ? `<p class="text-[11px] text-slate-400 italic truncate mt-0.5">"${escapeHTML(item.note)}"</p>` : ''}
+                </div>
+              </div>
+
+              <div class="flex items-center gap-1.5 shrink-0">
+                <div class="text-right mr-1">
+                  <span class="block text-sm font-extrabold text-emerald-400 tabular-nums">+${formatCLP(item._total)}</span>
+                  ${(Number(item.tip) > 0 || Number(item.bonus) > 0) ? `<span class="block text-[10px] text-slate-400 tabular-nums">Base ${formatCLP(item.basePay)}</span>` : ''}
+                </div>
+                <!-- Botón Editar -->
+                <button onclick="startEditRecord('order', '${item.id}')" aria-label="Editar pedido" class="p-2 rounded-xl bg-[#090d16] hover:bg-slate-800 text-cyan-400 border border-[#1e293b] transition active:scale-90">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"/></svg>
+                </button>
+                <!-- Botón Eliminar -->
+                <button onclick="requestDeleteRecord('order', '${item.id}')" aria-label="Eliminar pedido" class="p-2 rounded-xl bg-[#090d16] hover:bg-rose-500/15 text-slate-400 hover:text-rose-400 border border-[#1e293b] transition active:scale-90">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+                </button>
+              </div>
+            </div>
+          `;
+        } else {
+          return `
+            <div class="bg-[#131c2e] border border-[#1e293b] rounded-2xl p-3.5 flex items-center justify-between gap-2.5">
+              <div class="flex items-center gap-3 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-rose-500/15 border border-rose-500/35 text-rose-400 flex items-center justify-center shrink-0">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                </div>
+                <div class="min-w-0">
+                  <span class="block text-xs font-extrabold text-white truncate">${escapeHTML(item.category)}</span>
+                  <span class="block text-[11px] text-slate-400 mt-0.5">${formatHumanDateTime(item.datetime)}</span>
+                  ${item.note ? `<p class="text-[11px] text-slate-400 italic truncate mt-0.5">"${escapeHTML(item.note)}"</p>` : ''}
+                </div>
+              </div>
+
+              <div class="flex items-center gap-1.5 shrink-0">
+                <span class="text-sm font-extrabold text-rose-400 tabular-nums mr-1">-${formatCLP(item._total)}</span>
+                <!-- Botón Editar -->
+                <button onclick="startEditRecord('expense', '${item.id}')" aria-label="Editar gasto" class="p-2 rounded-xl bg-[#090d16] hover:bg-slate-800 text-cyan-400 border border-[#1e293b] transition active:scale-90">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125"/></svg>
+                </button>
+                <!-- Botón Eliminar -->
+                <button onclick="requestDeleteRecord('expense', '${item.id}')" aria-label="Eliminar gasto" class="p-2 rounded-xl bg-[#090d16] hover:bg-rose-500/15 text-slate-400 hover:text-rose-400 border border-[#1e293b] transition active:scale-90">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0"/></svg>
+                </button>
+              </div>
+            </div>
+          `;
+        }
+      }).join('');
+    }
+
+    function requestDeleteRecord(type, id) {
+      openConfirmModal({
+        title: type === 'order' ? '¿Eliminar este pedido?' : '¿Eliminar este gasto?',
+        message: 'Se eliminará permanentemente de la memoria de tu teléfono.',
+        confirmText: 'Eliminar',
+        onConfirm: () => {
+          if (type === 'order') {
+            appState.orders = appState.orders.filter((o) => o.id !== id);
+          } else {
+            appState.expenses = appState.expenses.filter((e) => e.id !== id);
+          }
+          saveState();
+          renderResumenView();
+          showToast('Registro eliminado');
+        }
+      });
+    }
+
+    /**
+     * =========================================================
+     * VISTA 2: COMPARADOR DE OFERTAS EN VIVO ("¿CUÁL TOMAR?")
+     * =========================================================
+     */
+    function initComparatorOffers() {
+      comparatorOffers = [
+        { id: nextOfferSeq++, app: 'PedidosYa', pay: '', km: '', minutes: '', comuna: 'Providencia' },
+        { id: nextOfferSeq++, app: 'Uber Eats', pay: '', km: '', minutes: '', comuna: 'Las Condes' }
+      ];
+    }
+
+    function addComparatorOffer() {
+      if (comparatorOffers.length >= 5) {
+        showToast('Máximo 5 ofertas simultáneas', 'info');
+        return;
+      }
+      const apps = ['Rappi', 'DiDi Food', 'PedidosYa', 'Uber Eats'];
+      const nextApp = apps[comparatorOffers.length % apps.length];
+      comparatorOffers.push({
+        id: nextOfferSeq++,
+        app: nextApp,
+        pay: '',
+        km: '',
+        minutes: '',
+        comuna: 'Ñuñoa'
+      });
+      renderComparatorView();
+    }
+
+    function removeComparatorOffer(id) {
+      if (comparatorOffers.length <= 2) {
+        showToast('Mantén al menos 2 ofertas para comparar', 'info');
+        return;
+      }
+      comparatorOffers = comparatorOffers.filter((o) => o.id !== id);
+      renderComparatorView();
+    }
+
+    function resetComparatorOffers() {
+      nextOfferSeq = 1;
+      initComparatorOffers();
+      renderComparatorView();
+      showToast('Ofertas limpiadas', 'info');
+    }
+
+    function loadSampleOffersToCompare() {
+      nextOfferSeq = 1;
+      comparatorOffers = [
+        { id: nextOfferSeq++, app: 'PedidosYa', pay: 3900, km: 3.1, minutes: 15, comuna: 'Providencia' },
+        { id: nextOfferSeq++, app: 'Uber Eats', pay: 4600, km: 6.4, minutes: 28, comuna: 'Maipú' },
+        { id: nextOfferSeq++, app: 'Rappi',     pay: 2300, km: 4.0, minutes: 22, comuna: 'Santiago Centro' }
+      ];
+      renderComparatorView();
+      showToast('Ejemplo cargado: mira el veredicto arriba', 'info');
+    }
+
+    function updateComparatorOfferField(id, field, value) {
+      const offer = comparatorOffers.find((o) => o.id === id);
+      if (!offer) return;
+      offer[field] = value;
+      updateComparatorEvaluationOnly();
+    }
+
+    function getHistoricalZoneStats() {
+      const map = {};
+      appState.orders.forEach((o) => {
+        if (!map[o.comuna]) map[o.comuna] = { total: 0, km: 0, count: 0 };
+        map[o.comuna].total += getOrderTotal(o);
+        map[o.comuna].km += Number(o.km) || 0;
+        map[o.comuna].count += 1;
+      });
+      const result = {};
+      Object.entries(map).forEach(([comuna, d]) => {
+        result[comuna] = {
+          count: d.count,
+          perKm: d.km > 0 ? Math.round(d.total / d.km) : 0
+        };
+      });
+      return result;
+    }
+
+    function evaluateAllOffers() {
+      const minPerKm = Number(appState.settings.minPerKm) || 750;
+      const costPerKm = Number(appState.settings.costPerKm) >= 0 ? Number(appState.settings.costPerKm) : 95;
+      const zoneHist = getHistoricalZoneStats();
+
+      const evaluated = comparatorOffers.map((offer, idx) => {
+        const pay = Number(offer.pay) || 0;
+        const km = Number(offer.km) || 0;
+        const minutes = Number(offer.minutes) || 0;
+        const isComplete = pay > 0 && km > 0;
+
+        const grossPerKm = km > 0 ? Math.round(pay / km) : 0;
+        const opCost = Math.round(km * costPerKm);
+        const netPay = pay - opCost;
+        const netPerKm = km > 0 ? Math.round(netPay / km) : 0;
+        const hourlyRate = minutes > 0 ? Math.round((netPay / minutes) * 60) : 0;
+
+        // Historial de zona
+        const zStats = zoneHist[offer.comuna];
+        let zoneMultiplier = 1.0;
+        let zoneBadge = '📍 Sin historial en esta zona';
+        let zoneBadgeColor = 'text-slate-400';
+
+        if (zStats && zStats.count > 0) {
+          if (zStats.perKm >= minPerKm) {
+            zoneMultiplier = 1.12;
+            zoneBadge = `🔥 Zona rentable en tu historial (${formatCLP(zStats.perKm)}/km)`;
+            zoneBadgeColor = 'text-emerald-400';
+          } else {
+            zoneMultiplier = 0.94;
+            zoneBadge = `⚠️ Zona baja en tu historial (${formatCLP(zStats.perKm)}/km)`;
+            zoneBadgeColor = 'text-amber-400';
+          }
+        }
+
+        // Puntaje compuesto: $/km neto (65%) + $/hora normalizado (35%) x bono zona
+        const baseScore = isComplete
+          ? ((netPerKm * 0.65) + ((hourlyRate > 0 ? hourlyRate / 12 : netPerKm * 0.8) * 0.35)) * zoneMultiplier
+          : -1;
+
+        return {
+          ...offer,
+          indexNumber: idx + 1,
+          pay,
+          km,
+          minutes,
+          isComplete,
+          grossPerKm,
+          opCost,
+          netPay,
+          netPerKm,
+          hourlyRate,
+          zoneBadge,
+          zoneBadgeColor,
+          score: baseScore,
+          meetsMinKm: grossPerKm >= minPerKm
+        };
+      });
+
+      // Ordenar copias completas del mejor al peor
+      const rankedComplete = [...evaluated]
+        .filter((e) => e.isComplete)
+        .sort((a, b) => b.score - a.score);
+
+      evaluated.forEach((ev) => {
+        if (!ev.isComplete) {
+          ev.rank = null;
+          ev.verdictText = 'Completa pago y km para evaluar';
+          ev.verdictStyle = 'bg-slate-800 text-slate-400 border-slate-700';
+          ev.cardBorder = 'border-[#1e293b]';
+          return;
+        }
+
+        const rankIdx = rankedComplete.findIndex((r) => r.id === ev.id);
+        ev.rank = rankIdx + 1;
+
+        if (!ev.meetsMinKm) {
+          ev.verdictText = `❌ RECHAZAR (BAJO META ${formatCLP(minPerKm)}/KM)`;
+          ev.verdictStyle = 'bg-rose-500/15 text-rose-300 border-rose-500/40';
+          ev.cardBorder = 'border-rose-500/40';
+        } else if (ev.rank === 1) {
+          ev.verdictText = '🏆 #1 TOMAR PRIMERO (CONVIENE)';
+          ev.verdictStyle = 'bg-emerald-500 text-slate-950 border-emerald-400';
+          ev.cardBorder = 'border-emerald-500 winner-glow';
+        } else {
+          ev.verdictText = `⚠️ REGULAR (#${ev.rank} OPCIÓN)`;
+          ev.verdictStyle = 'bg-amber-500/15 text-amber-300 border-amber-500/40';
+          ev.cardBorder = 'border-amber-500/40';
+        }
+      });
+
+      return { evaluated, rankedComplete };
+    }
+
+    function renderComparatorView() {
+      document.getElementById('comp-meta-display').textContent = `${formatCLP(appState.settings.minPerKm)}/km`;
+      document.getElementById('comp-cost-display').textContent = `${formatCLP(appState.settings.costPerKm)}/km`;
+
+      const { evaluated } = evaluateAllOffers();
+      const container = document.getElementById('comparator-cards-container');
+      const comunaOptions = Object.keys(SANTIAGO_COMUNAS);
+
+      container.innerHTML = evaluated.map((ev) => {
+        const cfg = APP_CONFIG[ev.app] || APP_CONFIG['Otra'];
+        return `
+          <div id="offer-card-${ev.id}" class="bg-[#131c2e] border-2 ${ev.cardBorder} rounded-2xl p-3.5 space-y-3 transition-all">
+            <!-- Encabezado Tarjeta Oferta -->
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded-lg text-[11px] font-extrabold bg-[#090d16] text-white border border-[#1e293b]">Oferta #${ev.indexNumber}</span>
+                <span class="w-2.5 h-2.5 rounded-full" style="background-color: ${cfg.color}"></span>
+              </div>
+              ${comparatorOffers.length > 2 ? `
+                <button onclick="removeComparatorOffer(${ev.id})" class="text-[11px] text-slate-400 hover:text-rose-400 font-semibold px-2 py-0.5 rounded-lg bg-[#090d16]">Quitar</button>
+              ` : ''}
+            </div>
+
+            <!-- Veredicto Visual Inmediato -->
+            <div id="offer-verdict-${ev.id}" class="px-3 py-2 rounded-xl border text-xs font-extrabold text-center ${ev.verdictStyle}">
+              ${ev.verdictText}
+            </div>
+
+            <!-- Inputs Rápidos: App y Comuna -->
+            <div class="grid grid-cols-2 gap-2.5">
+              <div>
+                <label class="block text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-1">App</label>
+                <select onchange="updateComparatorOfferField(${ev.id}, 'app', this.value)" class="w-full bg-[#090d16] border border-[#1e293b] focus:border-cyan-500 rounded-xl px-2.5 py-2 text-xs font-bold text-white outline-none">
+                  ${Object.keys(APP_CONFIG).map((a) => `<option value="${a}" ${ev.app === a ? 'selected' : ''}>${a}</option>`).join('')}
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-1">Comuna Destino</label>
+                <select onchange="updateComparatorOfferField(${ev.id}, 'comuna', this.value)" class="w-full bg-[#090d16] border border-[#1e293b] focus:border-cyan-500 rounded-xl px-2.5 py-2 text-xs font-bold text-white outline-none">
+                  ${comunaOptions.map((c) => `<option value="${c}" ${ev.comuna === c ? 'selected' : ''}>${c}</option>`).join('')}
+                </select>
+              </div>
+            </div>
+
+            <!-- Inputs Numéricos: Pago ($), Distancia (km), Tiempo (min) -->
+            <div class="grid grid-cols-3 gap-2">
+              <div>
+                <label class="block text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-1">Pago ($ CLP)</label>
+                <input type="number" min="0" step="10" value="${ev.pay || ''}" placeholder="3500" oninput="updateComparatorOfferField(${ev.id}, 'pay', this.value)" class="w-full bg-[#090d16] border border-[#1e293b] focus:border-emerald-500 rounded-xl px-2.5 py-2 text-sm font-extrabold text-emerald-400 tabular-nums outline-none" />
+              </div>
+              <div>
+                <label class="block text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-1">Dist. (km)</label>
+                <input type="number" min="0.1" step="0.1" value="${ev.km || ''}" placeholder="3.2" oninput="updateComparatorOfferField(${ev.id}, 'km', this.value)" class="w-full bg-[#090d16] border border-[#1e293b] focus:border-cyan-500 rounded-xl px-2.5 py-2 text-sm font-extrabold text-cyan-400 tabular-nums outline-none" />
+              </div>
+              <div>
+                <label class="block text-[10px] uppercase tracking-wider font-semibold text-slate-400 mb-1">Tiempo (min)</label>
+                <input type="number" min="1" step="1" value="${ev.minutes || ''}" placeholder="15" oninput="updateComparatorOfferField(${ev.id}, 'minutes', this.value)" class="w-full bg-[#090d16] border border-[#1e293b] focus:border-amber-500 rounded-xl px-2.5 py-2 text-sm font-extrabold text-amber-300 tabular-nums outline-none" />
+              </div>
+            </div>
+
+            <!-- Métricas Calculadas al Instante -->
+            <div id="offer-metrics-${ev.id}" class="bg-[#090d16] border border-[#1e293b] rounded-xl p-2.5 space-y-1.5">
+              <div class="grid grid-cols-3 gap-1 text-center tabular-nums">
+                <div>
+                  <span class="block text-[10px] text-slate-400">Bruto / km</span>
+                  <strong class="text-xs ${ev.meetsMinKm ? 'text-emerald-400' : 'text-rose-400'}">${formatCLP(ev.grossPerKm)}/km</strong>
+                </div>
+                <div class="border-x border-[#1e293b]">
+                  <span class="block text-[10px] text-slate-400">Neto Est.</span>
+                  <strong class="text-xs text-white">${formatCLP(ev.netPay)}</strong>
+                </div>
+                <div>
+                  <span class="block text-[10px] text-slate-400">Proy. Hora</span>
+                  <strong class="text-xs text-amber-400">${ev.minutes > 0 ? formatCLP(ev.hourlyRate) + '/hr' : '—'}</strong>
+                </div>
+              </div>
+              <p class="text-[11px] text-center ${ev.zoneBadgeColor} pt-1 border-t border-[#1e293b]/70">${ev.zoneBadge}</p>
+            </div>
+
+            <!-- Botón Aceptar y Guardar Pedido con 1 toque -->
+            <button id="offer-accept-btn-${ev.id}" onclick="acceptComparedOffer(${ev.id})" ${!ev.isComplete ? 'disabled' : ''} class="w-full py-2.5 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-1.5 ${
+              ev.isComplete
+                ? 'bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 border border-emerald-500/40 active:scale-[0.98]'
+                : 'bg-slate-800/60 text-slate-500 border border-slate-800 cursor-not-allowed'
+            }">
+              <span>✓ Aceptar y Guardar Pedido</span>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      renderComparatorRankingSummary();
+    }
+
+    /**
+     * Actualiza solo los indicadores calculados sin destruir el foco del input mientras se escribe
+     */
+    function updateComparatorEvaluationOnly() {
+      const { evaluated } = evaluateAllOffers();
+
+      evaluated.forEach((ev) => {
+        const card = document.getElementById(`offer-card-${ev.id}`);
+        if (card) {
+          card.className = `bg-[#131c2e] border-2 ${ev.cardBorder} rounded-2xl p-3.5 space-y-3 transition-all`;
+        }
+        const verdictEl = document.getElementById(`offer-verdict-${ev.id}`);
+        if (verdictEl) {
+          verdictEl.className = `px-3 py-2 rounded-xl border text-xs font-extrabold text-center ${ev.verdictStyle}`;
+          verdictEl.textContent = ev.verdictText;
+        }
+        const metricsEl = document.getElementById(`offer-metrics-${ev.id}`);
+        if (metricsEl) {
+          metricsEl.innerHTML = `
+            <div class="grid grid-cols-3 gap-1 text-center tabular-nums">
+              <div>
+                <span class="block text-[10px] text-slate-400">Bruto / km</span>
+                <strong class="text-xs ${ev.meetsMinKm ? 'text-emerald-400' : 'text-rose-400'}">${formatCLP(ev.grossPerKm)}/km</strong>
+              </div>
+              <div class="border-x border-[#1e293b]">
+                <span class="block text-[10px] text-slate-400">Neto Est.</span>
+                <strong class="text-xs text-white">${formatCLP(ev.netPay)}</strong>
+              </div>
+              <div>
+                <span class="block text-[10px] text-slate-400">Proy. Hora</span>
+                <strong class="text-xs text-amber-400">${ev.minutes > 0 ? formatCLP(ev.hourlyRate) + '/hr' : '—'}</strong>
+              </div>
+            </div>
+            <p class="text-[11px] text-center ${ev.zoneBadgeColor} pt-1 border-t border-[#1e293b]/70">${ev.zoneBadge}</p>
+          `;
+        }
+        const acceptBtn = document.getElementById(`offer-accept-btn-${ev.id}`);
+        if (acceptBtn) {
+          acceptBtn.disabled = !ev.isComplete;
+          acceptBtn.className = `w-full py-2.5 rounded-xl font-extrabold text-xs transition flex items-center justify-center gap-1.5 ${
+            ev.isComplete
+              ? 'bg-emerald-500/20 hover:bg-emerald-500 text-emerald-300 hover:text-slate-950 border border-emerald-500/40 active:scale-[0.98]'
+              : 'bg-slate-800/60 text-slate-500 border border-slate-800 cursor-not-allowed'
+          }`;
+        }
+      });
+
+      renderComparatorRankingSummary();
+    }
+
+    function renderComparatorRankingSummary() {
+      const { rankedComplete } = evaluateAllOffers();
+      const summaryEl = document.getElementById('comparator-ranking-summary');
+
+      if (rankedComplete.length === 0) {
+        summaryEl.innerHTML = `<p class="text-xs text-slate-400">Escribe el pago ($) y los kilómetros de tus ofertas abajo para ver cuál te conviene tomar primero.</p>`;
+        return;
+      }
+
+      summaryEl.innerHTML = rankedComplete.map((item, idx) => {
+        const cfg = APP_CONFIG[item.app] || APP_CONFIG['Otra'];
+        const medal = idx === 0 && item.meetsMinKm ? '🏆 #1' : `#${idx + 1}`;
+        return `
+          <div class="flex items-center justify-between bg-[#090d16] border border-[#1e293b] rounded-xl px-3 py-2 text-xs">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="font-extrabold ${idx === 0 && item.meetsMinKm ? 'text-emerald-400' : 'text-slate-300'}">${medal}</span>
+              <span class="w-2 h-2 rounded-full shrink-0" style="background-color: ${cfg.color}"></span>
+              <span class="font-bold text-white truncate">${item.app}</span>
+              <span class="text-[11px] text-slate-400 truncate">(${item.comuna})</span>
+            </div>
+            <div class="flex items-center gap-2 shrink-0 tabular-nums">
+              <span class="font-extrabold ${item.meetsMinKm ? 'text-emerald-400' : 'text-rose-400'}">${formatCLP(item.grossPerKm)}/km</span>
+              ${item.minutes > 0 ? `<span class="text-[11px] text-amber-400">${formatCLP(item.hourlyRate)}/hr</span>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function acceptComparedOffer(id) {
+      const offer = comparatorOffers.find((o) => o.id === id);
+      if (!offer) return;
+      const pay = Math.round(Number(offer.pay) || 0);
+      const km = parseFloat(offer.km) || 0;
+      const minutes = Math.round(Number(offer.minutes) || 0);
+
+      if (pay <= 0 || km <= 0) {
+        showToast('Completa pago y distancia antes de aceptar', 'error');
+        return;
+      }
+
+      const { date, time } = getNowDateAndTime();
+      const newOrder = {
+        id: 'ord_' + Date.now(),
+        app: offer.app,
+        basePay: pay,
+        tip: 0,
+        bonus: 0,
+        km: Number(km.toFixed(2)),
+        minutes,
+        comuna: offer.comuna,
+        datetime: `${date}T${time}`,
+        note: 'Aceptado desde Comparador'
+      };
+
+      appState.orders.unshift(newOrder);
+      saveState();
+      updateHeaderTodayPill();
+      showToast(`🏆 ¡Pedido de ${offer.app} (${formatCLP(pay)}) guardado!`);
+    }
+
+    /**
+     * =========================================================
+     * VISTA 3: REGISTRAR Y EDITAR PEDIDOS / GASTOS
+     * =========================================================
+     */
+    function initRegisterFormOptions() {
+      // Botones de App
+      const appGrid = document.getElementById('app-selector-grid');
+      appGrid.innerHTML = Object.keys(APP_CONFIG).map((appName) => {
+        const cfg = APP_CONFIG[appName];
+        return `
+          <button type="button" data-app-choice="${appName}" onclick="selectOrderApp('${appName}')" class="app-choice-btn py-2.5 px-2 rounded-xl border text-xs font-bold transition flex items-center justify-center gap-1.5 bg-[#090d16] border-[#1e293b] text-slate-300">
+            <span class="w-2 h-2 rounded-full" style="background-color: ${cfg.color}"></span>
+            <span class="truncate">${appName}</span>
+          </button>
+        `;
+      }).join('');
+
+      // Opciones de Comuna + personalizada
+      const comunaSelect = document.getElementById('order-comuna');
+      const comunasList = Object.keys(SANTIAGO_COMUNAS);
+      comunaSelect.innerHTML = comunasList.map((c) => `<option value="${c}">${c}</option>`).join('') +
+        `<option value="__CUSTOM__">✍️ Otra (escribir comuna manual)</option>`;
+    }
+
+    function selectOrderApp(appName) {
+      document.getElementById('order-app').value = appName;
+      const cfg = APP_CONFIG[appName] || APP_CONFIG['Otra'];
+
+      document.querySelectorAll('.app-choice-btn').forEach((btn) => {
+        const selected = btn.dataset.appChoice === appName;
+        if (selected) {
+          btn.style.backgroundColor = cfg.bg;
+          btn.style.borderColor = cfg.color;
+          btn.style.color = '#ffffff';
+        } else {
+          btn.style.backgroundColor = '#090d16';
+          btn.style.borderColor = '#1e293b';
+          btn.style.color = '#cbd5e1';
+        }
+      });
+    }
+
+    function toggleCustomComunaInput() {
+      const sel = document.getElementById('order-comuna').value;
+      const wrapper = document.getElementById('custom-comuna-wrapper');
+      const input = document.getElementById('order-comuna-custom');
+      if (sel === '__CUSTOM__') {
+        wrapper.classList.remove('hidden');
+        input.required = true;
+        input.focus();
+      } else {
+        wrapper.classList.add('hidden');
+        input.required = false;
+      }
+    }
+
+    function switchRegisterSubTab(subTab) {
+      const isOrder = subTab === 'pedido';
+      document.getElementById('form-pedido').classList.toggle('hidden', !isOrder);
+      document.getElementById('form-gasto').classList.toggle('hidden', isOrder);
+
+      const btnOrder = document.getElementById('reg-tab-pedido');
+      const btnExpense = document.getElementById('reg-tab-gasto');
+
+      if (isOrder) {
+        btnOrder.className = 'py-2.5 text-xs font-extrabold rounded-xl bg-emerald-500 text-slate-950 transition';
+        btnExpense.className = 'py-2.5 text-xs font-extrabold rounded-xl text-slate-400 hover:text-white transition';
+      } else {
+        btnExpense.className = 'py-2.5 text-xs font-extrabold rounded-xl bg-rose-500 text-white transition';
+        btnOrder.className = 'py-2.5 text-xs font-extrabold rounded-xl text-slate-400 hover:text-white transition';
+      }
+    }
+
+    function resetRegisterFormsToNew() {
+      document.getElementById('editing-order-id').value = '';
+      document.getElementById('editing-expense-id').value = '';
+      document.getElementById('form-pedido').reset();
+      document.getElementById('form-gasto').reset();
+      document.getElementById('custom-comuna-wrapper').classList.add('hidden');
+      document.getElementById('order-comuna-custom').required = false;
+
+      const { date, time } = getNowDateAndTime();
+      document.getElementById('order-date').value = date;
+      document.getElementById('order-time').value = time;
+      document.getElementById('expense-date').value = date;
+      document.getElementById('expense-time').value = time;
+
+      selectOrderApp('PedidosYa');
+      updateOrderPreview();
+
+      document.getElementById('register-view-title').textContent = 'Nuevo Registro Manual';
+      document.getElementById('register-view-subtitle').textContent = 'Escribe cada detalle de tu pedido o gasto';
+      document.getElementById('submit-order-btn').textContent = 'Guardar Pedido';
+      document.getElementById('submit-expense-btn').textContent = 'Guardar Gasto';
+      document.getElementById('cancel-edit-btn').classList.add('hidden');
+      document.getElementById('register-type-switcher').classList.remove('hidden');
+    }
+
+    function cancelEditMode() {
+      resetRegisterFormsToNew();
+      switchTab('resumen');
+    }
+
+    function startEditRecord(type, id) {
+      resetRegisterFormsToNew();
+      switchTab('registrar');
+      document.getElementById('cancel-edit-btn').classList.remove('hidden');
+      document.getElementById('register-type-switcher').classList.add('hidden');
+
+      if (type === 'order') {
+        const order = appState.orders.find((o) => o.id === id);
+        if (!order) return;
+
+        switchRegisterSubTab('pedido');
+        document.getElementById('register-view-title').textContent = 'Editando Pedido';
+        document.getElementById('register-view-subtitle').textContent = 'Modifica los valores y guarda los cambios';
+        document.getElementById('submit-order-btn').textContent = 'Actualizar Pedido';
+        document.getElementById('editing-order-id').value = order.id;
+
+        const [dPart, tPart] = (order.datetime || '').split('T');
+        document.getElementById('order-date').value = dPart || getNowDateAndTime().date;
+        document.getElementById('order-time').value = (tPart || '12:00').slice(0, 5);
+
+        selectOrderApp(order.app);
+
+        if (SANTIAGO_COMUNAS[order.comuna]) {
+          document.getElementById('order-comuna').value = order.comuna;
+        } else {
+          document.getElementById('order-comuna').value = '__CUSTOM__';
+          toggleCustomComunaInput();
+          document.getElementById('order-comuna-custom').value = order.comuna;
+        }
+
+        document.getElementById('order-base').value = order.basePay || 0;
+        document.getElementById('order-tip').value = order.tip || '';
+        document.getElementById('order-bonus').value = order.bonus || '';
+        document.getElementById('order-km').value = order.km || '';
+        document.getElementById('order-minutes').value = order.minutes || '';
+        document.getElementById('order-note').value = order.note || '';
+        updateOrderPreview();
+      } else {
+        const expense = appState.expenses.find((e) => e.id === id);
+        if (!expense) return;
+
+        switchRegisterSubTab('gasto');
+        document.getElementById('register-view-title').textContent = 'Editando Gasto';
+        document.getElementById('register-view-subtitle').textContent = 'Modifica los datos del gasto y actualiza';
+        document.getElementById('submit-expense-btn').textContent = 'Actualizar Gasto';
+        document.getElementById('editing-expense-id').value = expense.id;
+
+        const [dPart, tPart] = (expense.datetime || '').split('T');
+        document.getElementById('expense-date').value = dPart || getNowDateAndTime().date;
+        document.getElementById('expense-time').value = (tPart || '12:00').slice(0, 5);
+        document.getElementById('expense-category').value = expense.category;
+        document.getElementById('expense-amount').value = expense.amount;
+        document.getElementById('expense-note').value = expense.note || '';
+      }
+    }
+
+    function addQuickAmount(inputId, delta) {
+      const el = document.getElementById(inputId);
+      el.value = (Number(el.value) || 0) + delta;
+      updateOrderPreview();
+    }
+
+    function setExpenseAmount(val) {
+      document.getElementById('expense-amount').value = val;
+    }
+
+    function updateOrderPreview() {
+      const base = Number(document.getElementById('order-base').value) || 0;
+      const tip = Number(document.getElementById('order-tip').value) || 0;
+      const bonus = Number(document.getElementById('order-bonus').value) || 0;
+      const km = Number(document.getElementById('order-km').value) || 0;
+      const minutes = Number(document.getElementById('order-minutes').value) || 0;
+
+      const total = base + tip + bonus;
+      const perKm = km > 0 ? Math.round(total / km) : 0;
+      const perHr = minutes > 0 ? Math.round((total / minutes) * 60) : 0;
+
+      document.getElementById('order-total-preview').textContent = formatCLP(total);
+      const kmEl = document.getElementById('order-km-rate-preview');
+      kmEl.textContent = `${formatCLP(perKm)}/km`;
+      kmEl.className = `text-sm font-extrabold tabular-nums ${perKm >= appState.settings.minPerKm ? 'text-emerald-400' : 'text-cyan-400'}`;
+
+      document.getElementById('order-hr-rate-preview').textContent = minutes > 0 ? `${formatCLP(perHr)}/hr` : '—';
+    }
+
+    function handleSaveOrder(e) {
+      e.preventDefault();
+      const editingId = document.getElementById('editing-order-id').value;
+      const dateVal = document.getElementById('order-date').value || getNowDateAndTime().date;
+      const timeVal = document.getElementById('order-time').value || getNowDateAndTime().time;
+      const app = document.getElementById('order-app').value;
+
+      let comuna = document.getElementById('order-comuna').value;
+      if (comuna === '__CUSTOM__') {
+        comuna = document.getElementById('order-comuna-custom').value.trim() || 'Otra';
+      }
+
+      const basePay = Math.round(Number(document.getElementById('order-base').value) || 0);
+      const tip = Math.round(Number(document.getElementById('order-tip').value) || 0);
+      const bonus = Math.round(Number(document.getElementById('order-bonus').value) || 0);
+      const km = parseFloat(document.getElementById('order-km').value) || 0;
+      const minutes = Math.round(Number(document.getElementById('order-minutes').value) || 0);
+      const note = document.getElementById('order-note').value.trim();
+
+      if (basePay + tip + bonus <= 0) {
+        showToast('Ingresa un monto mayor a $0', 'error');
+        return;
+      }
+      if (km <= 0) {
+        showToast('Ingresa una distancia válida en km', 'error');
+        return;
+      }
+
+      const orderPayload = {
+        id: editingId || ('ord_' + Date.now()),
+        app,
+        basePay,
+        tip,
+        bonus,
+        km: Number(km.toFixed(2)),
+        minutes,
+        comuna,
+        datetime: `${dateVal}T${timeVal}`,
+        note
+      };
+
+      if (editingId) {
+        const idx = appState.orders.findIndex((o) => o.id === editingId);
+        if (idx !== -1) appState.orders[idx] = orderPayload;
+        showToast('Pedido actualizado');
+      } else {
+        appState.orders.unshift(orderPayload);
+        showToast(`Pedido guardado: +${formatCLP(basePay + tip + bonus)}`);
+      }
+
+      saveState();
+      resetRegisterFormsToNew();
+      switchTab('resumen');
+    }
+
+    function handleSaveExpense(e) {
+      e.preventDefault();
+      const editingId = document.getElementById('editing-expense-id').value;
+      const dateVal = document.getElementById('expense-date').value || getNowDateAndTime().date;
+      const timeVal = document.getElementById('expense-time').value || getNowDateAndTime().time;
+      const category = document.getElementById('expense-category').value;
+      const amount = Math.round(Number(document.getElementById('expense-amount').value) || 0);
+      const note = document.getElementById('expense-note').value.trim();
+
+      if (amount <= 0) {
+        showToast('Ingresa un monto válido para el gasto', 'error');
+        return;
+      }
+
+      const expensePayload = {
+        id: editingId || ('exp_' + Date.now()),
+        category,
+        amount,
+        datetime: `${dateVal}T${timeVal}`,
+        note
+      };
+
+      if (editingId) {
+        const idx = appState.expenses.findIndex((ex) => ex.id === editingId);
+        if (idx !== -1) appState.expenses[idx] = expensePayload;
+        showToast('Gasto actualizado');
+      } else {
+        appState.expenses.unshift(expensePayload);
+        showToast(`Gasto registrado: -${formatCLP(amount)}`);
+      }
+
+      saveState();
+      resetRegisterFormsToNew();
+      switchTab('resumen');
+    }
+
+    /**
+     * =========================================================
+     * VISTA 4: STATS & APPS (TABLA COMPARATIVA + CHART.JS)
+     * =========================================================
+     */
+    function renderStatsView() {
+      renderAppsComparisonTable();
+      renderCharts();
+    }
+
+    function renderAppsComparisonTable() {
+      const tbody = document.getElementById('apps-comparison-tbody');
+      const byApp = {};
+
+      appState.orders.forEach((o) => {
+        if (!byApp[o.app]) {
+          byApp[o.app] = { app: o.app, count: 0, total: 0, km: 0, timedIncome: 0, timedMinutes: 0 };
+        }
+        const tot = getOrderTotal(o);
+        byApp[o.app].count += 1;
+        byApp[o.app].total += tot;
+        byApp[o.app].km += Number(o.km) || 0;
+        if (Number(o.minutes) > 0) {
+          byApp[o.app].timedIncome += tot;
+          byApp[o.app].timedMinutes += Number(o.minutes);
+        }
+      });
+
+      const rows = Object.values(byApp).map((d) => ({
+        ...d,
+        perKm: d.km > 0 ? Math.round(d.total / d.km) : 0,
+        perHr: d.timedMinutes > 0 ? Math.round((d.timedIncome / d.timedMinutes) * 60) : 0
+      })).sort((a, b) => b.perKm - a.perKm);
+
+      if (rows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-5 text-center text-xs text-slate-400">Registra pedidos para comparar el rendimiento entre aplicaciones.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = rows.map((r, idx) => {
+        const cfg = APP_CONFIG[r.app] || APP_CONFIG['Otro'];
+        return `
+          <tr class="hover:bg-[#090d16]/50">
+            <td class="py-2.5 pr-2 font-bold text-white flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full shrink-0" style="background-color: ${cfg.color}"></span>
+              <span class="truncate">${escapeHTML(r.app)}</span>
+              ${idx === 0 ? `<span class="text-[9px] px-1 py-0.2 rounded bg-emerald-500/20 text-emerald-400 font-extrabold">#1</span>` : ''}
+            </td>
+            <td class="py-2.5 px-1.5 text-right text-slate-300">${r.count}</td>
+            <td class="py-2.5 px-1.5 text-right font-bold text-emerald-400">${formatCLP(r.total)}</td>
+            <td class="py-2.5 px-1.5 text-right text-slate-300">${r.km.toFixed(1)}</td>
+            <td class="py-2.5 px-1.5 text-right font-extrabold text-cyan-400">${formatCLP(r.perKm)}</td>
+            <td class="py-2.5 pl-1.5 text-right font-bold text-amber-400">${r.perHr > 0 ? formatCLP(r.perHr) : '—'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function renderCharts() {
+      if (chartAppsDoughnut) chartAppsDoughnut.destroy();
+      if (chart7Days) chart7Days.destroy();
+      if (chartExpensesCat) chartExpensesCat.destroy();
+
+      // 1. Ganancias por App (Doughnut)
+      const appMap = {};
+      appState.orders.forEach((o) => {
+        appMap[o.app] = (appMap[o.app] || 0) + getOrderTotal(o);
+      });
+      const appLabels = Object.keys(appMap);
+      const appVals = Object.values(appMap);
+      const appCols = appLabels.map((a) => (APP_CONFIG[a] || APP_CONFIG['Otro']).color);
+
+      chartAppsDoughnut = new Chart(document.getElementById('chart-apps-doughnut').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: appLabels.length ? appLabels : ['Sin pedidos'],
+          datasets: [{
+            data: appVals.length ? appVals : [1],
+            backgroundColor: appCols.length ? appCols : ['#1e293b'],
+            borderColor: '#131c2e',
+            borderWidth: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '62%',
+          plugins: {
+            legend: { position: 'right', labels: { color: '#e2e8f0', font: { size: 11, family: 'Inter' }, boxWidth: 12 } },
+            tooltip: {
+              backgroundColor: '#090d16',
+              callbacks: {
+                label: (ctx) => appLabels.length ? `${ctx.label}: ${formatCLP(ctx.raw)}` : 'Sin datos'
+              }
+            }
+          }
+        }
+      });
+
+      // 2. Evolución diaria últimos 7 días
+      const labels7 = [];
+      const inc7 = [];
+      const exp7 = [];
+      const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+      for (let i = 6; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const prefix = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        labels7.push(i === 0 ? 'Hoy' : `${dayNames[d.getDay()]} ${d.getDate()}`);
+
+        inc7.push(appState.orders.filter((o) => o.datetime.startsWith(prefix)).reduce((s, o) => s + getOrderTotal(o), 0));
+        exp7.push(appState.expenses.filter((e) => e.datetime.startsWith(prefix)).reduce((s, e) => s + Number(e.amount), 0));
+      }
+
+      chart7Days = new Chart(document.getElementById('chart-7days').getContext('2d'), {
+        type: 'bar',
+        data: {
+          labels: labels7,
+          datasets: [
+            { label: 'Ingresos', data: inc7, backgroundColor: '#10b981', borderRadius: 6 },
+            { label: 'Gastos', data: exp7, backgroundColor: '#f43f5e', borderRadius: 6 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { labels: { color: '#cbd5e1', font: { size: 11, family: 'Inter' }, boxWidth: 12 } },
+            tooltip: {
+              backgroundColor: '#090d16',
+              callbacks: { label: (ctx) => `${ctx.dataset.label}: ${formatCLP(ctx.raw)}` }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: '#94a3b8', font: { size: 10 } } },
+            y: {
+              grid: { color: '#1e293b' },
+              ticks: { color: '#94a3b8', font: { size: 10 }, callback: (v) => '$' + (v >= 1000 ? (v / 1000) + 'k' : v) }
+            }
+          }
+        }
+      });
+
+      // 3. Distribución de gastos por categoría
+      const expCatMap = {};
+      appState.expenses.forEach((e) => {
+        expCatMap[e.category] = (expCatMap[e.category] || 0) + Number(e.amount);
+      });
+      const expLabels = Object.keys(expCatMap);
+      const expVals = Object.values(expCatMap);
+      const expPalette = ['#f43f5e', '#f59e0b', '#06b6d4', '#8b5cf6', '#ec4899', '#64748b'];
+
+      chartExpensesCat = new Chart(document.getElementById('chart-expenses-cat').getContext('2d'), {
+        type: 'doughnut',
+        data: {
+          labels: expLabels.length ? expLabels : ['Sin gastos'],
+          datasets: [{
+            data: expVals.length ? expVals : [1],
+            backgroundColor: expLabels.length ? expLabels.map((_, idx) => expPalette[idx % expPalette.length]) : ['#1e293b'],
+            borderColor: '#131c2e',
+            borderWidth: 3
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '62%',
+          plugins: {
+            legend: { position: 'right', labels: { color: '#e2e8f0', font: { size: 11, family: 'Inter' }, boxWidth: 12 } },
+            tooltip: {
+              backgroundColor: '#090d16',
+              callbacks: { label: (ctx) => expLabels.length ? `${ctx.label}: ${formatCLP(ctx.raw)}` : 'Sin datos' }
+            }
+          }
+        }
+      });
+    }
+
+    /**
+     * =========================================================
+     * VISTA 5: MAPA DE ZONAS RENTABLES EN SANTIAGO
+     * =========================================================
+     */
+    function initLeafletMapIfNeeded() {
+      if (leafletMap) return;
+      leafletMap = L.map('santiago-map', {
+        center: [-33.4489, -70.6693],
+        zoom: 11,
+        zoomControl: true
+      });
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap &copy; CARTO',
+        subdomains: 'abcd',
+        maxZoom: 18
+      }).addTo(leafletMap);
+      mapLayerGroup = L.layerGroup().addTo(leafletMap);
+    }
+
+    function resetMapCenter() {
+      if (leafletMap) leafletMap.flyTo([-33.4489, -70.6693], 11, { duration: 0.7 });
+    }
+
+    function focusComunaOnMap(comuna) {
+      const coords = findComunaCoords(comuna);
+      if (!coords || !leafletMap) return;
+      leafletMap.flyTo([coords.lat, coords.lng], 13, { duration: 0.65 });
+      const marker = zoneMarkersByComuna[comuna];
+      if (marker) setTimeout(() => marker.openPopup(), 320);
+    }
+
+    function findComunaCoords(comunaName) {
+      if (SANTIAGO_COMUNAS[comunaName]) return SANTIAGO_COMUNAS[comunaName];
+      // Búsqueda flexible sin tildes o mayúsculas
+      const norm = (s) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const target = norm(comunaName);
+      for (const [key, coords] of Object.entries(SANTIAGO_COMUNAS)) {
+        if (norm(key) === target) return coords;
+      }
+      return { lat: -33.4550, lng: -70.6450 };
+    }
+
+    function renderMapView() {
+      initLeafletMapIfNeeded();
+      setTimeout(() => leafletMap.invalidateSize(), 60);
+
+      const minPerKm = Number(appState.settings.minPerKm) || 750;
+      const highThreshold = Math.round(minPerKm * 1.25);
+
+      document.getElementById('legend-high-text').textContent = `>${formatCLP(highThreshold)}/km Alta`;
+      document.getElementById('legend-mid-text').textContent = `≥${formatCLP(minPerKm)}/km Meta`;
+      document.getElementById('legend-low-text').textContent = `<${formatCLP(minPerKm)}/km Baja`;
+
+      mapLayerGroup.clearLayers();
+      zoneMarkersByComuna = {};
+
+      const zoneMap = {};
+      appState.orders.forEach((o) => {
+        if (!zoneMap[o.comuna]) zoneMap[o.comuna] = { comuna: o.comuna, total: 0, count: 0, km: 0 };
+        zoneMap[o.comuna].total += getOrderTotal(o);
+        zoneMap[o.comuna].count += 1;
+        zoneMap[o.comuna].km += Number(o.km) || 0;
+      });
+
+      const zones = Object.values(zoneMap).map((z) => ({
+        ...z,
+        perKm: z.km > 0 ? Math.round(z.total / z.km) : 0
+      })).sort((a, b) => b.perKm - a.perKm || b.total - a.total);
+
+      const maxIncome = zones.length ? Math.max(...zones.map((z) => z.total)) : 1;
+
+      zones.forEach((z) => {
+        const coords = findComunaCoords(z.comuna);
+        const color = z.perKm > highThreshold ? '#10b981' : z.perKm >= minPerKm ? '#f59e0b' : '#f43f5e';
+        const radiusMeters = 750 + Math.round((z.total / maxIncome) * 1050);
+
+        const circle = L.circle([coords.lat, coords.lng], {
+          color,
+          weight: 2,
+          fillColor: color,
+          fillOpacity: 0.34,
+          radius: radiusMeters
+        });
+
+        circle.bindPopup(`
+          <div class="p-1 min-w-[160px]">
+            <div class="font-extrabold text-sm text-white mb-1">${escapeHTML(z.comuna)}</div>
+            <div class="space-y-1 text-xs">
+              <div class="flex justify-between gap-3"><span class="text-slate-400">Pedidos:</span><strong class="text-white">${z.count}</strong></div>
+              <div class="flex justify-between gap-3"><span class="text-slate-400">Ganado:</span><strong class="text-emerald-400">${formatCLP(z.total)}</strong></div>
+              <div class="flex justify-between gap-3"><span class="text-slate-400">Rentabilidad:</span><strong style="color:${color}">${formatCLP(z.perKm)}/km</strong></div>
+            </div>
+          </div>
+        `);
+        circle.addTo(mapLayerGroup);
+        zoneMarkersByComuna[z.comuna] = circle;
+      });
+
+      const rankingEl = document.getElementById('zones-ranking-list');
+      if (zones.length === 0) {
+        rankingEl.innerHTML = `<p class="text-xs text-slate-400 text-center py-4">Sin zonas registradas aún. Registra un pedido para ver el mapa de calor.</p>`;
+        return;
+      }
+
+      rankingEl.innerHTML = zones.map((z, idx) => {
+        const badgeStyle = z.perKm > highThreshold
+          ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/35'
+          : z.perKm >= minPerKm
+          ? 'bg-amber-500/15 text-amber-400 border-amber-500/35'
+          : 'bg-rose-500/15 text-rose-400 border-rose-500/35';
+
+        const safeComuna = escapeHTML(z.comuna).replace(/'/g, "\\'");
+        return `
+          <button onclick="focusComunaOnMap('${safeComuna}')" class="w-full text-left bg-[#090d16] hover:bg-slate-900 border border-[#1e293b] rounded-xl p-3 flex items-center justify-between transition active:scale-[0.99]">
+            <div class="flex items-center gap-3">
+              <span class="w-7 h-7 rounded-lg bg-[#131c2e] border border-[#1e293b] flex items-center justify-center text-xs font-extrabold text-slate-300">#${idx + 1}</span>
+              <div>
+                <span class="block text-xs font-bold text-white">${escapeHTML(z.comuna)}</span>
+                <span class="block text-[11px] text-slate-400">${z.count} ${z.count === 1 ? 'pedido' : 'pedidos'} • ${formatKm(z.km)}</span>
+              </div>
+            </div>
+            <div class="text-right tabular-nums">
+              <span class="inline-block text-[11px] font-extrabold px-2 py-0.5 rounded-lg border ${badgeStyle}">${formatCLP(z.perKm)}/km</span>
+              <span class="block text-[11px] font-semibold text-slate-300 mt-0.5">${formatCLP(z.total)}</span>
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    /**
+     * =========================================================
+     * VISTA 6: AJUSTES, METAS, RESPALDOS Y LIMPIEZA
+     * =========================================================
+     */
+    function renderAjustesView() {
+      document.getElementById('setting-min-per-km').value = appState.settings.minPerKm;
+      document.getElementById('setting-cost-per-km').value = appState.settings.costPerKm;
+
+      const raw = localStorage.getItem(STORAGE_KEY) || '';
+      const kb = (new Blob([raw]).size / 1024).toFixed(1);
+      document.getElementById('storage-summary-pill').textContent = `${appState.orders.length} ped • ${kb} KB`;
+    }
+
+    function saveUserSettings() {
+      const minPerKm = Math.max(50, Math.round(Number(document.getElementById('setting-min-per-km').value) || 750));
+      const costPerKm = Math.max(0, Math.round(Number(document.getElementById('setting-cost-per-km').value) || 0));
+      appState.settings = { minPerKm, costPerKm };
+      saveState();
+      showToast(`Metas guardadas: ${formatCLP(minPerKm)}/km • Costo ${formatCLP(costPerKm)}/km`);
+    }
+
+    function triggerDownload(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function exportJSON() {
+      const payload = {
+        app: 'RiderTrack Chile',
+        version: '2.0',
+        exportedAt: new Date().toISOString(),
+        settings: appState.settings,
+        orders: appState.orders,
+        expenses: appState.expenses
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      triggerDownload(blob, `ridertrack_chile_respaldo_${new Date().toISOString().slice(0, 10)}.json`);
+      showToast('Respaldo JSON descargado');
+    }
+
+    function importJSON(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (!Array.isArray(parsed.orders) || !Array.isArray(parsed.expenses)) throw new Error('Inválido');
+          appState = {
+            orders: parsed.orders,
+            expenses: parsed.expenses,
+            settings: parsed.settings || appState.settings,
+            isDemoData: false
+          };
+          saveState();
+          switchTab('resumen');
+          showToast(`Respaldo restaurado (${parsed.orders.length} pedidos)`);
+        } catch (err) {
+          showToast('Archivo JSON inválido', 'error');
+        } finally {
+          event.target.value = '';
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function exportCSV() {
+      const headers = ['Tipo', 'Fecha_Hora', 'App_o_Categoria', 'Comuna', 'Pago_Base_CLP', 'Propina_CLP', 'Bono_CLP', 'Total_CLP', 'Distancia_KM', 'Duracion_Min', 'Rentabilidad_CLP_KM', 'Nota'];
+      const rows = [headers.join(';')];
+
+      appState.orders.forEach((o) => {
+        const total = getOrderTotal(o);
+        const perKm = o.km > 0 ? Math.round(total / o.km) : 0;
+        rows.push([
+          'Pedido',
+          o.datetime.replace('T', ' '),
+          `"${o.app}"`,
+          `"${o.comuna}"`,
+          o.basePay || 0,
+          o.tip || 0,
+          o.bonus || 0,
+          total,
+          String(o.km).replace('.', ','),
+          o.minutes || 0,
+          perKm,
+          `"${(o.note || '').replace(/"/g, '""')}"`
+        ].join(';'));
+      });
+
+      appState.expenses.forEach((ex) => {
+        rows.push([
+          'Gasto',
+          ex.datetime.replace('T', ' '),
+          `"${ex.category}"`,
+          '""',
+          0, 0, 0,
+          -Math.abs(Number(ex.amount)),
+          '0', 0, 0,
+          `"${(ex.note || '').replace(/"/g, '""')}"`
+        ].join(';'));
+      });
+
+      const blob = new Blob(['\uFEFF' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+      triggerDownload(blob, `ridertrack_chile_excel_${new Date().toISOString().slice(0, 10)}.csv`);
+      showToast('Reporte CSV exportado para Excel');
+    }
+
+    function confirmClearAllData() {
+      openConfirmModal({
+        title: '¿Limpiar datos y empezar en 0?',
+        message: 'Se borrarán todos los registros actuales (incluidos los datos de ejemplo) para que puedas escribir tus propios pedidos y gastos desde cero.',
+        confirmText: 'Sí, Empezar en 0',
+        confirmClass: 'bg-rose-500 hover:bg-rose-400 text-white',
+        onConfirm: () => {
+          appState.orders = [];
+          appState.expenses = [];
+          appState.isDemoData = false;
+          saveState();
+          switchTab('resumen');
+          showToast('Lista limpia: ya puedes registrar desde 0');
+        }
+      });
+    }
+
+    function confirmLoadSampleData() {
+      openConfirmModal({
+        title: '¿Cargar datos de ejemplo?',
+        message: 'Se cargarán 14 pedidos y 4 gastos de demostración en Santiago de Chile.',
+        confirmText: 'Cargar Ejemplo',
+        confirmClass: 'bg-cyan-500 hover:bg-cyan-400 text-slate-950',
+        onConfirm: () => {
+          const currentSettings = { ...appState.settings };
+          appState = createSampleDataset();
+          appState.settings = currentSettings;
+          saveState();
+          switchTab('resumen');
+          showToast('Datos de ejemplo cargados');
+        }
+      });
+    }
+
+    /**
+     * Arranque inicial
+     */
+    window.addEventListener('DOMContentLoaded', () => {
+      initPWA();
+      initRegisterFormOptions();
+      loadState();
+      resetRegisterFormsToNew();
+      initComparatorOffers();
+      setPeriod('semana');
+    });
+  </script>
+</body>
+</html>
